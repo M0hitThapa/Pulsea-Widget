@@ -9,25 +9,33 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-export const Widget = () => {
+import supabase from "@/supabase";
+
+export const Widget = ({ projectId }) => {
   const [rating, setRating] = useState(3);
   const [hoveredStar, setHoveredStar] = useState(0);
   const [submitted, setSubmitted] = useState(false);
 
   const onSelectStar = (index) => setRating(index + 1);
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
 
     const form = e.target;
     const data = {
-      name: form.name.value,
-      email: form.email.value,
-      feedback: form.feedback.value,
-      rating,
+      p_project_id: projectId,
+      p_user_name: form.name.value,
+      p_user_email: form.email.value,
+      p_message: form.feedback.value,
+      p_rating: rating,
     };
+
+    const { data: returnedData, error } = await supabase.rpc(
+      "add_feedback",
+      data
+    );
     setSubmitted(true);
-    console.log(data);
+    console.log(returnedData);
   };
 
   return (
@@ -35,16 +43,37 @@ export const Widget = () => {
       <div className="widget fixed bottom-4 left-4 z-50">
         <Popover>
           <PopoverTrigger asChild>
-            <Button type="button">💬 Feedback</Button>
+            <Button variant="default" type="button">
+              💬 Feedback
+            </Button>
           </PopoverTrigger>
 
           <PopoverContent
             side="top"
             align="start"
             sideOffset={8}
-            className="w-[370px] p-4  bg-white/60 backdrop-blur-md"
+            className="w-[370px] p-5 border border-neutral-200 relative  "
           >
-            <div className="bg-white p-4 shadow-input rounded border-neutral-200">
+            <svg className="absolute inset-0 h-full w-full">
+              <defs>
+                <filter id="noiseFilter">
+                  <feTurbulence
+                    type="fractalNoise"
+                    baseFrequency="0.9"
+                    numOctaves="4"
+                    stitchTiles="stitch"
+                  />
+                  <feColorMatrix type="saturate" values="0" />
+                </filter>
+              </defs>
+              <rect
+                width="100%"
+                height="100%"
+                filter="url(#noiseFilter)"
+                opacity="0.15"
+              />
+            </svg>
+            <div className=" relative">
               {submitted ? (
                 <div>
                   <div className="flex flex-col items-center justify-center">
