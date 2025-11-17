@@ -12,7 +12,7 @@ import {
 import supabase from "@/supabase";
 
 export const Widget = ({ projectId }) => {
-  const [rating, setRating] = useState(3);
+  const [rating, setRating] = useState(0);
   const [hoveredStar, setHoveredStar] = useState(0);
   const [submitted, setSubmitted] = useState(false);
 
@@ -40,39 +40,41 @@ export const Widget = ({ projectId }) => {
 
   return (
     <>
-      <div className="widget fixed bottom-4 left-4 z-50">
+      <div className="widget fixed right-8 bottom-4 z-50">
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="default" type="button">
-              💬 Feedback
-            </Button>
+            <div className="relative group">
+              <button>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className="icon icon-tabler icons-tabler-filled icon-tabler-message-2 size-12 text-neutral-900 dark:text-neutal-100"
+                >
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                  <path d="M18 3a4 4 0 0 1 4 4v8a4 4 0 0 1 -4 4h-2.586l-2.707 2.707a1 1 0 0 1 -1.32 .083l-.094 -.083l-2.708 -2.707h-2.585a4 4 0 0 1 -3.995 -3.8l-.005 -.2v-8a4 4 0 0 1 4 -4zm-4 9h-6a1 1 0 0 0 0 2h6a1 1 0 0 0 0 -2m2 -4h-8a1 1 0 1 0 0 2h8a1 1 0 0 0 0 -2" />
+                </svg>
+              </button>
+              <span
+                className="absolute -top-12 left-[50%] -translate-x-[50%] 
+  z-20 origin-left scale-0 px-3 rounded-lg border 
+  border-gray-300 bg-white dark:bg-black py-2 text-sm font-bold
+  shadow-md transition-all duration-300 ease-in-out 
+  group-hover:scale-100"
+              >
+                Feedback
+              </span>
+            </div>
           </PopoverTrigger>
 
           <PopoverContent
             side="top"
-            align="start"
+            align="end"
             sideOffset={8}
-            className="w-[370px] p-5 border border-neutral-200 relative  "
+            className="w-[370px] px-5 py-4 border border-neutral-200 relative bg-white dark:bg-neutral-950 rounded-lg "
           >
-            <svg className="absolute inset-0 h-full w-full">
-              <defs>
-                <filter id="noiseFilter">
-                  <feTurbulence
-                    type="fractalNoise"
-                    baseFrequency="0.9"
-                    numOctaves="4"
-                    stitchTiles="stitch"
-                  />
-                  <feColorMatrix type="saturate" values="0" />
-                </filter>
-              </defs>
-              <rect
-                width="100%"
-                height="100%"
-                filter="url(#noiseFilter)"
-                opacity="0.15"
-              />
-            </svg>
             <div className=" relative">
               {submitted ? (
                 <div>
@@ -103,8 +105,8 @@ export const Widget = ({ projectId }) => {
                 </div>
               ) : (
                 <div>
-                  <div className="mb-6">
-                    <h3 className="text-2xl font-bold text-neutral-900 mb-2 font-title flex gap-2">
+                  <div className="mb-4">
+                    <h3 className="text-2xl font-bold text-neutral-900 mb-1 font-title flex gap-2">
                       Share Your Thoughts
                     </h3>
                     <p className="text-sm text-neutral-500">
@@ -117,7 +119,7 @@ export const Widget = ({ projectId }) => {
                     <div>
                       <Label
                         htmlFor="name"
-                        className="text-neutral-700 font-semibold mb-2 block font-title"
+                        className="text-neutral-700 font-semibold mb-1 block font-title"
                       >
                         Name
                       </Label>
@@ -131,7 +133,7 @@ export const Widget = ({ projectId }) => {
                     <div>
                       <Label
                         htmlFor="email"
-                        className="text-neutral-700 font-semibold mb-2 block font-title"
+                        className="text-neutral-700 font-semibold mb-1 block font-title"
                       >
                         Email
                       </Label>
@@ -158,10 +160,10 @@ export const Widget = ({ projectId }) => {
                     </div>
 
                     <div className="pt-2">
-                      <Label className="text-neutral-700 font-semibold mb-3 block font-title">
+                      <Label className="text-neutral-700 font-semibold mb-2 block font-title">
                         Rate Your Experience
                       </Label>
-                      <div className="flex gap-2 mb-6">
+                      <div className="flex gap-2 mb-3">
                         {[...Array(5)].map((_, index) => {
                           const active =
                             (hoveredStar > 0 ? hoveredStar : rating) > index;
@@ -188,7 +190,10 @@ export const Widget = ({ projectId }) => {
                       </div>
                     </div>
 
-                    <Button className="w-full" type="submit">
+                    <Button
+                      className="w-full bg-neutral-900 dark:bg-neutral-100"
+                      type="submit"
+                    >
                       Submit Feedback
                     </Button>
                   </form>
