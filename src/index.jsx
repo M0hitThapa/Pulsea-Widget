@@ -1,3 +1,3 @@
-import WidgetWebComponent from "./wen-component";
+import WidgetWebComponent from "./web-component";
 
 customElements.define("my-widget", WidgetWebComponent);
