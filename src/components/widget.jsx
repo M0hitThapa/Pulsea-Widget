@@ -1,21 +1,105 @@
-import { useState } from "react";
+"use client";
+
+import { useState, useEffect, useRef } from "react";
+import * as React from "react";
+import {
+  Drawer,
+  DrawerTrigger,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+} from "@/components/ui/drawer";
+
 import { Button } from "./ui/button";
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { Tabs, TabsContent } from "./ui/tabs";
+import { AnimatePresence, motion } from "framer-motion";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+  MessageSquare,
+  X,
+  Star,
+  CheckCircle2,
+  Send,
+  Loader2,
+  Bug,
+  Upload,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { Upload, X, Loader2, Bug, MessageSquare } from "lucide-react";
-import { uploadFile } from "@/supabase";
 
-import supabase from "@/supabase";
+// --- Placeholder Functions (for demonstration) ---
+const uploadFile = async (bucket, fileName, file) => {
+  console.log(`Simulating file upload to ${bucket}/${fileName}`);
+  await new Promise((resolve) => setTimeout(resolve, 500));
+  return `https://mockurl.com/${fileName}`;
+};
 
+const supabase = {
+  rpc: async (func, data) => {
+    console.log(`Simulating supabase RPC call: ${func}`, data);
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    return { data: { message: "Feedback submitted" }, error: null };
+  },
+};
+
+// --- Constants ---
+const CLOSED_SIZE = 56;
+const HOVER_WIDTH = 150;
+const DESKTOP_WIDTH = 400;
+const DESKTOP_HEIGHT = 630;
+
+// --- Helper Icon ---
+const MessageSquareIcon = (props) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className="icon icon-tabler icons-tabler-outline icon-tabler-message-2-share"
+    {...props}
+  >
+    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+    <path d="M8 9h8" />
+    <path d="M8 13h6" />
+    <path d="M12 21l-3 -3h-3a3 3 0 0 1 -3 -3v-8a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v6" />
+    <path d="M16 22l5 -5" />
+    <path d="M21 21.5v-4.5h-4.5" />
+  </svg>
+);
+
+// --- useClickOutside Hook ---
+const useClickOutside = (ref, handler) => {
+  useEffect(() => {
+    const listener = (event) => {
+      // Do nothing if clicking ref's element or descendant elements
+      if (!ref.current || ref.current.contains(event.target)) {
+        return;
+      }
+      handler(event);
+    };
+
+    document.addEventListener("mousedown", listener);
+    document.addEventListener("touchstart", listener);
+
+    return () => {
+      document.removeEventListener("mousedown", listener);
+      document.removeEventListener("touchstart", listener);
+    };
+  }, [ref, handler]);
+};
+
+// --- Main Widget Component ---
 export const Widget = ({ projectId }) => {
+  const [open, setOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const [rating, setRating] = useState(0);
   const [hoveredStar, setHoveredStar] = useState(0);
   const [submitted, setSubmitted] = useState(false);
@@ -23,18 +107,41 @@ export const Widget = ({ projectId }) => {
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [isMobile, setIsMobile] = useState(true);
+
+  // NEW: Ref for the widget container
+  const widgetRef = useRef(null);
+
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    checkIsMobile();
+    window.addEventListener("resize", checkIsMobile);
+    return () => window.removeEventListener("resize", checkIsMobile);
+  }, []);
+
+  useEffect(() => {
+    if (open) setIsHovered(false);
+  }, [open]);
+
+  // NEW: Close widget when clicking outside on desktop
+  useClickOutside(widgetRef, () => {
+    if (open && !isMobile) {
+      setOpen(false);
+    }
+  });
 
   const onSelectStar = (index) => setRating(index + 1);
 
+  // --- Image/Submit Handlers (Unchanged) ---
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Validate file size (5MB max)
       if (file.size > 5 * 1024 * 1024) {
         toast.error("Image size must be less than 5MB");
         return;
       }
-      // Validate file type
       if (!file.type.startsWith("image/")) {
         toast.error("Please upload an image file");
         return;
@@ -56,12 +163,12 @@ export const Widget = ({ projectId }) => {
   const submit = async (e) => {
     e.preventDefault();
     setUploading(true);
+    setSubmitted(false);
 
     try {
       const form = e.target;
       let imageUrl = null;
 
-      // Upload image if selected
       if (imageFile) {
         const fileName = `${Date.now()}-${imageFile.name}`;
         imageUrl = await uploadFile("feedback-images", fileName, imageFile);
@@ -94,13 +201,13 @@ export const Widget = ({ projectId }) => {
       );
       console.log(returnedData);
 
-      // Reset form after 3 seconds
       setTimeout(() => {
         setSubmitted(false);
         setRating(0);
         setImageFile(null);
         setImagePreview(null);
         form.reset();
+        setOpen(false);
       }, 3000);
     } catch (error) {
       console.error("Error submitting:", error);
@@ -110,136 +217,271 @@ export const Widget = ({ projectId }) => {
     }
   };
 
-  return (
-    <>
-      <div className="widget fixed right-8 bottom-4 z-50">
-        <Popover>
-          <PopoverTrigger asChild>
-            <div className="relative group">
-              <button className="p-3 bg-blue-600 hover:bg-blue-700 rounded-full shadow-lg transition-all hover:scale-110">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="28"
-                  height="28"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  className="text-white"
-                >
-                  <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                  <path d="M18 3a4 4 0 0 1 4 4v8a4 4 0 0 1 -4 4h-2.586l-2.707 2.707a1 1 0 0 1 -1.32 .083l-.094 -.083l-2.708 -2.707h-2.585a4 4 0 0 1 -3.995 -3.8l-.005 -.2v-8a4 4 0 0 1 4 -4zm-4 9h-6a1 1 0 0 0 0 2h6a1 1 0 0 0 0 -2m2 -4h-8a1 1 0 1 0 0 2h8a1 1 0 0 0 0 -2" />
-                </svg>
-              </button>
-            </div>
-          </PopoverTrigger>
+  // --- Reusable Form Content Block (Used in both Drawer and Desktop Widget) ---
+  // ... (inside the Widget component)
 
-          <PopoverContent
-            side="top"
-            align="end"
-            sideOffset={8}
-            className="w-[400px] px-5 py-4 border border-neutral-200 dark:border-neutral-800 relative bg-white dark:bg-neutral-950 rounded-lg"
+  // --- Reusable Form Content Block ---
+  const formContent = (
+    <div className="flex flex-col h-full space-y-4">
+      {/* 1. Header is correctly padded */}
+      <DrawerHeader className="pt-6 pb-2 flex w-full items-center justify-between px-6">
+        <div className="flex items-center justify-between w-full">
+          <div>
+            <DrawerTitle className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
+              Share Your Thoughts
+            </DrawerTitle>
+            <DrawerDescription className="text-sm text-neutral-500 dark:text-neutral-400">
+              We&apos;d love to hear from you.
+            </DrawerDescription>
+          </div>
+          {/* Desktop Close Button (only visible in the Desktop view when 'open' is true) */}
+          {!isMobile && open && (
+            <button
+              onClick={() => setOpen(false)}
+              className="p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+            >
+              <X className="w-5 h-5 text-neutral-500" />
+            </button>
+          )}
+        </div>
+      </DrawerHeader>
+
+      {submitted ? (
+        // Submitted content uses px-6
+        <motion.div
+          key="success-message"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.9 }}
+          className="flex flex-1 flex-col items-center justify-center text-center px-6 min-h-[300px]"
+        >
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", stiffness: 200 }}
+            className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
           >
-            <div className="relative">
-              {submitted ? (
-                <div className="flex flex-col items-center justify-center py-8">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="48"
-                    height="48"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="text-green-600 mb-4"
-                  >
-                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                    <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
-                    <path d="M9 12l2 2l4 -4" />
-                  </svg>
-                  <h3 className="text-lg font-bold text-neutral-900 dark:text-neutral-100 mb-2 font-title">
-                    {activeTab === "feedback" ? "Feedback" : "Bug Report"}{" "}
-                    Received!
-                  </h3>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                    Thank you for your{" "}
-                    {activeTab === "feedback" ? "feedback" : "bug report"}
-                  </p>
-                </div>
-              ) : (
-                <div>
-                  <div className="mb-4">
-                    <h3 className="text-xl font-bold text-neutral-900 dark:text-neutral-100 mb-1 font-title">
-                      Share Your Thoughts
-                    </h3>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                      We&apos;d love to hear from you
-                    </p>
-                  </div>
+            <CheckCircle2 className="h-8 w-8" />
+          </motion.div>
+          <h3 className="mb-2 text-xl font-bold text-neutral-900 dark:text-neutral-100">
+            Thanks!
+          </h3>
+          <p className="text-sm text-neutral-500">
+            Your {activeTab} helps us grow.
+          </p>
+        </motion.div>
+      ) : (
+        <Tabs
+          value={activeTab}
+          onValueChange={(v) => setActiveTab(v)}
+          // FIX: Apply px-6 (horizontal padding) and pb-6 (bottom padding) to the main Tabs container
+          className="flex flex-col flex-1 min-h-0 px-6 pb-6"
+        >
+          {/* 2. Tab bar container: NO horizontal margin or padding needed here. It will use the full width provided by the parent Tabs container. */}
+          <div className="grid w-full grid-cols-2 p-1 mb-4 rounded-lg bg-neutral-100 dark:bg-neutral-900 sticky top-0 z-10">
+            <TabTrigger
+              value="feedback"
+              activeTab={activeTab}
+              onClick={() => setActiveTab("feedback")}
+              icon={MessageSquare}
+              label="Feedback"
+            />
+            <TabTrigger
+              value="bug"
+              activeTab={activeTab}
+              onClick={() => setActiveTab("bug")}
+              icon={Bug}
+              label="Bug Report"
+            />
+          </div>
 
-                  <Tabs
-                    value={activeTab}
-                    onValueChange={(v) => setActiveTab(v)}
-                    className="mb-2"
-                  >
-                    <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger
-                        value="feedback"
-                        className="flex items-center gap-2"
-                      >
-                        <MessageSquare className="h-4 w-4" />
-                        Feedback
-                      </TabsTrigger>
-                      <TabsTrigger
-                        value="bug"
-                        className="flex items-center gap-2"
-                      >
-                        <Bug className="h-4 w-4" />
-                        Bug Report
-                      </TabsTrigger>
-                    </TabsList>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+              // FIX: Remove px-6 and pb-6 as it's now applied to the Tabs component above.
+              className="flex-1 min-h-0"
+            >
+              <TabsContent value={activeTab} className="mt-0 space-y-3">
+                <form onSubmit={submit} className="space-y-3">
+                  <FormFields
+                    rating={rating}
+                    hoveredStar={hoveredStar}
+                    setHoveredStar={setHoveredStar}
+                    onSelectStar={onSelectStar}
+                    imagePreview={imagePreview}
+                    removeImage={removeImage}
+                    handleImageChange={handleImageChange}
+                    uploading={uploading}
+                    type={activeTab}
+                  />
+                </form>
+              </TabsContent>
+            </motion.div>
+          </AnimatePresence>
+        </Tabs>
+      )}
+    </div>
+  );
+  // ... (rest of the code is unchanged, including the useClickOutside hook)
 
-                    <TabsContent value="feedback" className="mt-2">
-                      <form onSubmit={submit} className="space-y-2">
-                        <FormFields
-                          rating={rating}
-                          hoveredStar={hoveredStar}
-                          setHoveredStar={setHoveredStar}
-                          onSelectStar={onSelectStar}
-                          imagePreview={imagePreview}
-                          removeImage={removeImage}
-                          handleImageChange={handleImageChange}
-                          uploading={uploading}
-                          type="feedback"
-                        />
-                      </form>
-                    </TabsContent>
-
-                    <TabsContent value="bug" className="mt-2">
-                      <form onSubmit={submit} className="space-y-2">
-                        <FormFields
-                          rating={rating}
-                          hoveredStar={hoveredStar}
-                          setHoveredStar={setHoveredStar}
-                          onSelectStar={onSelectStar}
-                          imagePreview={imagePreview}
-                          removeImage={removeImage}
-                          handleImageChange={handleImageChange}
-                          uploading={uploading}
-                          type="bug"
-                        />
-                      </form>
-                    </TabsContent>
-                  </Tabs>
-                </div>
-              )}
-            </div>
-          </PopoverContent>
-        </Popover>
+  // --- The Trigger Button Component ---
+  const TriggerButton = (
+    <motion.div
+      initial={false}
+      animate={{
+        width: isHovered && !isMobile ? HOVER_WIDTH : CLOSED_SIZE,
+        height: CLOSED_SIZE,
+        borderRadius: 50,
+      }}
+      transition={{
+        type: "spring",
+        stiffness: 280,
+        damping: 25,
+      }}
+      onHoverStart={() => !open && !isMobile && setIsHovered(true)}
+      onHoverEnd={() => !open && !isMobile && setIsHovered(false)}
+      className={cn(
+        "relative flex items-center justify-center overflow-hidden transition-colors bg-blue-600 dark:bg-blue-600"
+      )}
+    >
+      <div className="flex items-center gap-3 px-4">
+        <MessageSquareIcon className="size-7 font-semibold text-neutral-100 dark:text-neutral-950" />
+        <AnimatePresence>
+          {isHovered &&
+            !isMobile && ( // Only show text on desktop hover
+              <motion.span
+                initial={{ opacity: 0, width: 0, filter: "blur(4px)" }}
+                animate={{ opacity: 1, width: "auto", filter: "blur(0px)" }}
+                exit={{ opacity: 0, width: 0, filter: "blur(4px)" }}
+                transition={{ duration: 0.2 }}
+                className="whitespace-nowrap font-semibold text-white overflow-hidden"
+              >
+                Feedback
+              </motion.span>
+            )}
+        </AnimatePresence>
       </div>
-    </>
+    </motion.div>
+  );
+
+  // --- Render Logic ---
+
+  if (isMobile) {
+    // Mobile: Floating Button + Bottom Drawer (FIXED: Simplified trigger structure)
+    return (
+      <div className="fixed right-6 bottom-6 z-50 flex flex-col items-end">
+        <Drawer open={open} onOpenChange={setOpen}>
+          <AnimatePresence>
+            {/* Conditionally render the trigger using a styled motion.div */}
+            {!open && (
+              <motion.div
+                key="mobile-trigger"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ duration: 0.2 }}
+                // Apply fixed size and shadow for visibility
+                className="shadow-2xl rounded-full"
+                style={{ width: CLOSED_SIZE, height: CLOSED_SIZE }}
+              >
+                <DrawerTrigger asChild>
+                  {/* TriggerButton handles icon/color/etc. inside the fixed container */}
+                  {TriggerButton}
+                </DrawerTrigger>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <DrawerContent className="min-h-[74vh] max-h-[90vh]">
+            <div className="h-full">{formContent}</div>
+          </DrawerContent>
+        </Drawer>
+      </div>
+    );
+  }
+
+  // Desktop: Seamless Scaling Widget
+  return (
+    <div className="fixed right-6 bottom-6 z-50 flex flex-col items-end">
+      <Drawer open={open} onOpenChange={setOpen}>
+        <motion.div
+          ref={widgetRef} // ATTACHED WIDGET REF
+          layout
+          animate={{
+            width: open ? DESKTOP_WIDTH : isHovered ? HOVER_WIDTH : CLOSED_SIZE,
+            height: open ? DESKTOP_HEIGHT : CLOSED_SIZE,
+            borderRadius: open ? 16 : 50,
+            backgroundColor: open
+              ? "rgb(255 255 255)" // White/Form background when open
+              : "rgb(37 99 235)", // Blue/Button background when closed
+          }}
+          transition={{
+            type: "spring",
+            stiffness: 280,
+            damping: 25,
+          }}
+          className={cn(
+            "relative shadow-2xl overflow-hidden",
+            "dark:bg-neutral-950",
+            "cursor-pointer"
+          )}
+          onClick={() => !open && setOpen(true)}
+        >
+          <AnimatePresence mode="wait" initial={false}>
+            {open ? (
+              /* --- Open Form Content --- */
+              <motion.div
+                key="form-content"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2, delay: 0.1 }}
+                className="h-full"
+              >
+                {formContent}
+              </motion.div>
+            ) : (
+              /* --- Closed Button Content --- */
+              <motion.div
+                key="button-content"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.1 }}
+              >
+                {TriggerButton}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      </Drawer>
+    </div>
   );
 };
+
+// --- Helper Components (TabTrigger and FormFields - unchanged) ---
+
+function TabTrigger({ value, activeTab, onClick, icon: Icon, label }) {
+  const isActive = value === activeTab;
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-colors",
+        isActive
+          ? "text-neutral-900 dark:text-neutral-50 bg-white shadow-sm"
+          : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
+      )}
+    >
+      <Icon className="h-4 w-4" />
+      {label}
+    </button>
+  );
+}
 
 function FormFields({
   rating,
@@ -254,43 +496,47 @@ function FormFields({
 }) {
   return (
     <>
-      <div>
-        <Label
-          htmlFor="name"
-          className="text-neutral-700 dark:text-neutral-300 font-semibold mb-1 block font-title"
-        >
-          Name
-        </Label>
-        <Input
-          id="name"
-          name="name"
-          placeholder="John Doe"
-          required
-          className="h-9 border-neutral-300 dark:border-neutral-700"
-        />
+      <div className="grid grid-cols-2 gap-3">
+        {/* Name Field */}
+        <div className="space-y-1">
+          <Label
+            htmlFor="name"
+            className="text-xs font-medium text-neutral-600 dark:text-neutral-400"
+          >
+            Name
+          </Label>
+          <Input
+            id="name"
+            name="name"
+            placeholder="John Doe"
+            required
+            className="h-9 text-sm bg-neutral-50 dark:bg-neutral-900/50 border-neutral-200 dark:border-neutral-800"
+          />
+        </div>
+        {/* Email Field */}
+        <div className="space-y-1">
+          <Label
+            htmlFor="email"
+            className="text-xs font-medium text-neutral-600 dark:text-neutral-400"
+          >
+            Email
+          </Label>
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            placeholder="john@example.com"
+            required
+            className="h-9 text-sm bg-neutral-50 dark:bg-neutral-900/50 border-neutral-200 dark:border-neutral-800"
+          />
+        </div>
       </div>
 
-      <div>
-        <Label
-          htmlFor="email"
-          className="text-neutral-700 dark:text-neutral-300 font-semibold mb-1 block font-title"
-        >
-          Email
-        </Label>
-        <Input
-          id="email"
-          name="email"
-          type="email"
-          placeholder="john@example.com"
-          required
-          className="h-9 border-neutral-300 dark:border-neutral-700"
-        />
-      </div>
-
-      <div>
+      {/* Message Field */}
+      <div className="space-y-1">
         <Label
           htmlFor="feedback"
-          className="text-neutral-700 dark:text-neutral-300 font-semibold mb-2 block font-title"
+          className="text-xs font-medium text-neutral-600 dark:text-neutral-400"
         >
           {type === "feedback" ? "Your Feedback" : "Describe the Bug"}
         </Label>
@@ -303,42 +549,46 @@ function FormFields({
               : "What went wrong? Please provide details..."
           }
           required
-          className="h-24 border-neutral-300 dark:border-neutral-700 resize-none"
+          className="min-h-[80px] h-full resize-none text-sm bg-neutral-50 dark:bg-neutral-900/50 border-neutral-200 dark:border-neutral-800"
         />
       </div>
 
-      <div>
-        <Label className="text-neutral-700 dark:text-neutral-300 font-semibold mb-2 block font-title">
+      {/* Rating/Severity Section */}
+      <div className="space-y-1">
+        <Label className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
           {type === "feedback" ? "Rate Your Experience" : "Severity"}
         </Label>
-        <div className="flex justify-between mx-12  mb-3">
+        <div className="flex justify-center gap-2 py-1">
           {[...Array(5)].map((_, index) => {
-            const active = (hoveredStar > 0 ? hoveredStar : rating) > index;
+            const isActive = (hoveredStar > 0 ? hoveredStar : rating) > index;
             return (
-              <button
+              <motion.button
+                whileHover={{ scale: 1.2 }}
                 key={index}
                 type="button"
                 aria-label={`Set rating to ${index + 1}`}
                 onMouseEnter={() => setHoveredStar(index + 1)}
                 onMouseLeave={() => setHoveredStar(0)}
                 onClick={() => onSelectStar(index)}
-                className="relative group"
+                className="p-1 focus:outline-none"
               >
-                <StarIcon
-                  className={`h-6 w-6 transition-all duration-200 transform group-hover:scale-110 ${
-                    active
-                      ? "fill-yellow-400 stroke-yellow-500"
-                      : "fill-neutral-50 dark:fill-neutral-800 stroke-neutral-500"
-                  }`}
+                <Star
+                  className={cn(
+                    "h-6 w-6 transition-colors",
+                    isActive
+                      ? "fill-amber-400 text-amber-400"
+                      : "text-neutral-300 dark:text-neutral-700"
+                  )}
                 />
-              </button>
+              </motion.button>
             );
           })}
         </div>
       </div>
 
-      <div>
-        <Label className="text-neutral-700 dark:text-neutral-300 font-semibold mb-2 block font-title">
+      {/* Image Upload/Preview Section */}
+      <div className="space-y-1">
+        <Label className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
           {type === "feedback"
             ? "Screenshot (Optional)"
             : "Screenshot (Recommended)"}
@@ -372,6 +622,7 @@ function FormFields({
             </span>
             <input
               id="image"
+              name="image"
               type="file"
               accept="image/*"
               onChange={handleImageChange}
@@ -381,8 +632,9 @@ function FormFields({
         )}
       </div>
 
+      {/* Submit Button */}
       <Button
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+        className="w-full bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600"
         type="submit"
         disabled={uploading}
       >
@@ -392,29 +644,12 @@ function FormFields({
             Submitting...
           </>
         ) : (
-          `Submit ${type === "feedback" ? "Feedback" : "Bug Report"}`
+          <>
+            Submit {type === "feedback" ? "Feedback" : "Bug Report"}
+            <Send className="w-3 h-3 ml-2" />
+          </>
         )}
       </Button>
     </>
-  );
-}
-
-function StarIcon(props) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-      <path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873z" />
-    </svg>
   );
 }
