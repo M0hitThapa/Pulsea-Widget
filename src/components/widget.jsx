@@ -79,7 +79,6 @@ const MessageSquareIcon = (props) => (
 const useClickOutside = (ref, handler) => {
   useEffect(() => {
     const listener = (event) => {
-      // Do nothing if clicking ref's element or descendant elements
       if (!ref.current || ref.current.contains(event.target)) {
         return;
       }
@@ -109,7 +108,6 @@ export const Widget = ({ projectId }) => {
   const [uploading, setUploading] = useState(false);
   const [isMobile, setIsMobile] = useState(true);
 
-  // NEW: Ref for the widget container
   const widgetRef = useRef(null);
 
   useEffect(() => {
@@ -125,7 +123,7 @@ export const Widget = ({ projectId }) => {
     if (open) setIsHovered(false);
   }, [open]);
 
-  // NEW: Close widget when clicking outside on desktop
+  // Close widget when clicking outside on desktop
   useClickOutside(widgetRef, () => {
     if (open && !isMobile) {
       setOpen(false);
@@ -134,7 +132,6 @@ export const Widget = ({ projectId }) => {
 
   const onSelectStar = (index) => setRating(index + 1);
 
-  // --- Image/Submit Handlers (Unchanged) ---
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -217,13 +214,8 @@ export const Widget = ({ projectId }) => {
     }
   };
 
-  // --- Reusable Form Content Block (Used in both Drawer and Desktop Widget) ---
-  // ... (inside the Widget component)
-
-  // --- Reusable Form Content Block ---
   const formContent = (
     <div className="flex flex-col h-full space-y-4">
-      {/* 1. Header is correctly padded */}
       <DrawerHeader className="pt-6 pb-2 flex w-full items-center justify-between px-6">
         <div className="flex items-center justify-between w-full">
           <div>
@@ -234,20 +226,18 @@ export const Widget = ({ projectId }) => {
               We&apos;d love to hear from you.
             </DrawerDescription>
           </div>
-          {/* Desktop Close Button (only visible in the Desktop view when 'open' is true) */}
           {!isMobile && open && (
             <button
               onClick={() => setOpen(false)}
               className="p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
             >
-              <X className="w-5 h-5 text-neutral-500" />
+              <X className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
             </button>
           )}
         </div>
       </DrawerHeader>
 
       {submitted ? (
-        // Submitted content uses px-6
         <motion.div
           key="success-message"
           initial={{ opacity: 0, scale: 0.9 }}
@@ -266,7 +256,7 @@ export const Widget = ({ projectId }) => {
           <h3 className="mb-2 text-xl font-bold text-neutral-900 dark:text-neutral-100">
             Thanks!
           </h3>
-          <p className="text-sm text-neutral-500">
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">
             Your {activeTab} helps us grow.
           </p>
         </motion.div>
@@ -274,10 +264,8 @@ export const Widget = ({ projectId }) => {
         <Tabs
           value={activeTab}
           onValueChange={(v) => setActiveTab(v)}
-          // FIX: Apply px-6 (horizontal padding) and pb-6 (bottom padding) to the main Tabs container
           className="flex flex-col flex-1 min-h-0 px-6 pb-6"
         >
-          {/* 2. Tab bar container: NO horizontal margin or padding needed here. It will use the full width provided by the parent Tabs container. */}
           <div className="grid w-full grid-cols-2 p-1 mb-4 rounded-lg bg-neutral-100 dark:bg-neutral-900 sticky top-0 z-10">
             <TabTrigger
               value="feedback"
@@ -302,11 +290,10 @@ export const Widget = ({ projectId }) => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.3 }}
-              // FIX: Remove px-6 and pb-6 as it's now applied to the Tabs component above.
               className="flex-1 min-h-0"
             >
               <TabsContent value={activeTab} className="mt-0 space-y-3">
-                <form onSubmit={submit} className="space-y-3">
+                <div className="space-y-3">
                   <FormFields
                     rating={rating}
                     hoveredStar={hoveredStar}
@@ -317,8 +304,9 @@ export const Widget = ({ projectId }) => {
                     handleImageChange={handleImageChange}
                     uploading={uploading}
                     type={activeTab}
+                    onSubmit={submit}
                   />
-                </form>
+                </div>
               </TabsContent>
             </motion.div>
           </AnimatePresence>
@@ -326,9 +314,7 @@ export const Widget = ({ projectId }) => {
       )}
     </div>
   );
-  // ... (rest of the code is unchanged, including the useClickOutside hook)
 
-  // --- The Trigger Button Component ---
   const TriggerButton = (
     <motion.div
       initial={false}
@@ -345,38 +331,39 @@ export const Widget = ({ projectId }) => {
       onHoverStart={() => !open && !isMobile && setIsHovered(true)}
       onHoverEnd={() => !open && !isMobile && setIsHovered(false)}
       className={cn(
-        "relative flex items-center justify-center overflow-hidden transition-colors bg-blue-600 dark:bg-blue-600"
+        "relative flex items-center justify-center overflow-hidden transition-colors bg-blue-600 dark:bg-blue-500"
       )}
     >
       <div className="flex items-center gap-3 px-4">
-        <MessageSquareIcon className="size-7 font-semibold text-neutral-100 dark:text-neutral-950" />
+        <MessageSquareIcon className="size-7 font-semibold text-white" />
         <AnimatePresence>
-          {isHovered &&
-            !isMobile && ( // Only show text on desktop hover
-              <motion.span
-                initial={{ opacity: 0, width: 0, filter: "blur(4px)" }}
-                animate={{ opacity: 1, width: "auto", filter: "blur(0px)" }}
-                exit={{ opacity: 0, width: 0, filter: "blur(4px)" }}
-                transition={{ duration: 0.2 }}
-                className="whitespace-nowrap font-semibold text-white overflow-hidden"
-              >
-                Feedback
-              </motion.span>
-            )}
+          {isHovered && !isMobile && (
+            <motion.span
+              initial={{ opacity: 0, width: 0, filter: "blur(4px)" }}
+              animate={{ opacity: 1, width: "auto", filter: "blur(0px)" }}
+              exit={{ opacity: 0, width: 0, filter: "blur(4px)" }}
+              transition={{ duration: 0.2 }}
+              className="whitespace-nowrap font-semibold text-white overflow-hidden"
+            >
+              Feedback
+            </motion.span>
+          )}
         </AnimatePresence>
       </div>
     </motion.div>
   );
 
-  // --- Render Logic ---
-
   if (isMobile) {
-    // Mobile: Floating Button + Bottom Drawer (FIXED: Simplified trigger structure)
     return (
-      <div className="fixed right-6 bottom-6 z-50 flex flex-col items-end">
+      <div
+        className="fixed right-6 bottom-6 flex flex-col items-end pointer-events-none"
+        style={{
+          zIndex: 2147483647,
+          isolation: "isolate",
+        }}
+      >
         <Drawer open={open} onOpenChange={setOpen}>
           <AnimatePresence>
-            {/* Conditionally render the trigger using a styled motion.div */}
             {!open && (
               <motion.div
                 key="mobile-trigger"
@@ -384,19 +371,18 @@ export const Widget = ({ projectId }) => {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
                 transition={{ duration: 0.2 }}
-                // Apply fixed size and shadow for visibility
-                className="shadow-2xl rounded-full"
+                className="shadow-2xl rounded-full pointer-events-auto"
                 style={{ width: CLOSED_SIZE, height: CLOSED_SIZE }}
               >
-                <DrawerTrigger asChild>
-                  {/* TriggerButton handles icon/color/etc. inside the fixed container */}
-                  {TriggerButton}
-                </DrawerTrigger>
+                <DrawerTrigger asChild>{TriggerButton}</DrawerTrigger>
               </motion.div>
             )}
           </AnimatePresence>
 
-          <DrawerContent className="min-h-[74vh] max-h-[90vh]">
+          <DrawerContent
+            className="min-h-[74vh] max-h-[90vh] bg-white dark:bg-neutral-950"
+            style={{ zIndex: 2147483647 }}
+          >
             <div className="h-full">{formContent}</div>
           </DrawerContent>
         </Drawer>
@@ -404,20 +390,22 @@ export const Widget = ({ projectId }) => {
     );
   }
 
-  // Desktop: Seamless Scaling Widget
   return (
-    <div className="fixed right-6 bottom-6 z-50 flex flex-col items-end">
+    <div
+      className="fixed right-6 bottom-6 flex flex-col items-end pointer-events-none"
+      style={{
+        zIndex: 2147483647,
+        isolation: "isolate",
+      }}
+    >
       <Drawer open={open} onOpenChange={setOpen}>
         <motion.div
-          ref={widgetRef} // ATTACHED WIDGET REF
+          ref={widgetRef}
           layout
           animate={{
             width: open ? DESKTOP_WIDTH : isHovered ? HOVER_WIDTH : CLOSED_SIZE,
             height: open ? DESKTOP_HEIGHT : CLOSED_SIZE,
             borderRadius: open ? 16 : 50,
-            backgroundColor: open
-              ? "rgb(255 255 255)" // White/Form background when open
-              : "rgb(37 99 235)", // Blue/Button background when closed
           }}
           transition={{
             type: "spring",
@@ -425,15 +413,16 @@ export const Widget = ({ projectId }) => {
             damping: 25,
           }}
           className={cn(
-            "relative shadow-2xl overflow-hidden",
-            "dark:bg-neutral-950",
-            "cursor-pointer"
+            "relative shadow-2xl overflow-hidden pointer-events-auto",
+            !open && "cursor-pointer",
+            open
+              ? "bg-white dark:bg-neutral-950"
+              : "bg-blue-600 dark:bg-blue-500"
           )}
           onClick={() => !open && setOpen(true)}
         >
           <AnimatePresence mode="wait" initial={false}>
             {open ? (
-              /* --- Open Form Content --- */
               <motion.div
                 key="form-content"
                 initial={{ opacity: 0 }}
@@ -445,7 +434,6 @@ export const Widget = ({ projectId }) => {
                 {formContent}
               </motion.div>
             ) : (
-              /* --- Closed Button Content --- */
               <motion.div
                 key="button-content"
                 initial={{ opacity: 0 }}
@@ -463,8 +451,6 @@ export const Widget = ({ projectId }) => {
   );
 };
 
-// --- Helper Components (TabTrigger and FormFields - unchanged) ---
-
 function TabTrigger({ value, activeTab, onClick, icon: Icon, label }) {
   const isActive = value === activeTab;
   return (
@@ -473,7 +459,7 @@ function TabTrigger({ value, activeTab, onClick, icon: Icon, label }) {
       className={cn(
         "flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-colors",
         isActive
-          ? "text-neutral-900 dark:text-neutral-50 bg-white shadow-sm"
+          ? "text-neutral-900 dark:text-neutral-50 bg-white dark:bg-neutral-800 shadow-sm"
           : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
       )}
     >
@@ -493,11 +479,32 @@ function FormFields({
   handleImageChange,
   uploading,
   type,
+  onSubmit,
 }) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [feedback, setFeedback] = useState("");
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    // Create a mock form object
+    const mockForm = {
+      name: { value: name },
+      email: { value: email },
+      feedback: { value: feedback },
+      reset: () => {
+        setName("");
+        setEmail("");
+        setFeedback("");
+      },
+    };
+    // Call the parent submit with mock event
+    onSubmit({ ...e, target: mockForm, preventDefault: () => {} });
+  };
+
   return (
-    <>
+    <div className="space-y-3">
       <div className="grid grid-cols-2 gap-3">
-        {/* Name Field */}
         <div className="space-y-1">
           <Label
             htmlFor="name"
@@ -510,10 +517,11 @@ function FormFields({
             name="name"
             placeholder="John Doe"
             required
-            className="h-9 text-sm bg-neutral-50 dark:bg-neutral-900/50 border-neutral-200 dark:border-neutral-800"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="h-9 text-sm bg-neutral-50 dark:bg-neutral-900/50 border-neutral-200 dark:border-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500"
           />
         </div>
-        {/* Email Field */}
         <div className="space-y-1">
           <Label
             htmlFor="email"
@@ -527,12 +535,13 @@ function FormFields({
             type="email"
             placeholder="john@example.com"
             required
-            className="h-9 text-sm bg-neutral-50 dark:bg-neutral-900/50 border-neutral-200 dark:border-neutral-800"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="h-9 text-sm bg-neutral-50 dark:bg-neutral-900/50 border-neutral-200 dark:border-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500"
           />
         </div>
       </div>
 
-      {/* Message Field */}
       <div className="space-y-1">
         <Label
           htmlFor="feedback"
@@ -549,11 +558,12 @@ function FormFields({
               : "What went wrong? Please provide details..."
           }
           required
-          className="min-h-[80px] h-full resize-none text-sm bg-neutral-50 dark:bg-neutral-900/50 border-neutral-200 dark:border-neutral-800"
+          value={feedback}
+          onChange={(e) => setFeedback(e.target.value)}
+          className="min-h-[80px] h-full resize-none text-sm bg-neutral-50 dark:bg-neutral-900/50 border-neutral-200 dark:border-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500"
         />
       </div>
 
-      {/* Rating/Severity Section */}
       <div className="space-y-1">
         <Label className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
           {type === "feedback" ? "Rate Your Experience" : "Severity"}
@@ -576,7 +586,7 @@ function FormFields({
                   className={cn(
                     "h-6 w-6 transition-colors",
                     isActive
-                      ? "fill-amber-400 text-amber-400"
+                      ? "fill-amber-400 text-amber-400 dark:fill-amber-500 dark:text-amber-500"
                       : "text-neutral-300 dark:text-neutral-700"
                   )}
                 />
@@ -586,7 +596,6 @@ function FormFields({
         </div>
       </div>
 
-      {/* Image Upload/Preview Section */}
       <div className="space-y-1">
         <Label className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
           {type === "feedback"
@@ -611,13 +620,13 @@ function FormFields({
         ) : (
           <label
             htmlFor="image"
-            className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg cursor-pointer hover:border-neutral-400 dark:hover:border-neutral-600 transition-colors"
+            className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg cursor-pointer hover:border-neutral-400 dark:hover:border-neutral-600 transition-colors bg-neutral-50 dark:bg-neutral-900/30"
           >
-            <Upload className="h-8 w-8 text-neutral-400 mb-2" />
-            <span className="text-sm text-neutral-500">
+            <Upload className="h-8 w-8 text-neutral-400 dark:text-neutral-500 mb-2" />
+            <span className="text-sm text-neutral-500 dark:text-neutral-400">
               Click to upload image
             </span>
-            <span className="text-xs text-neutral-400 mt-1">
+            <span className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
               PNG, JPG up to 5MB
             </span>
             <input
@@ -632,11 +641,11 @@ function FormFields({
         )}
       </div>
 
-      {/* Submit Button */}
       <Button
         className="w-full bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600"
-        type="submit"
+        type="button"
         disabled={uploading}
+        onClick={handleSubmit}
       >
         {uploading ? (
           <>
@@ -650,6 +659,6 @@ function FormFields({
           </>
         )}
       </Button>
-    </>
+    </div>
   );
 }
