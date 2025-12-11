@@ -392,7 +392,7 @@ export const Widget = ({ projectId }) => {
 
   return (
     <div
-      className="fixed right-6 bottom-6 flex flex-col items-end pointer-events-none"
+      className="fixed right-6 bottom-6 flex flex-col items-end pointer-events-none z-50"
       style={{
         zIndex: 2147483647,
         isolation: "isolate",
