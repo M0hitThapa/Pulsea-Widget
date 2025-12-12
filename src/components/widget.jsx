@@ -331,7 +331,7 @@ export const Widget = ({ projectId }) => {
       onHoverStart={() => !open && !isMobile && setIsHovered(true)}
       onHoverEnd={() => !open && !isMobile && setIsHovered(false)}
       className={cn(
-        "relative flex items-center justify-center overflow-hidden transition-colors bg-blue-600 dark:bg-blue-500"
+        "relative flex items-center justify-center overflow-hidden transition-colors bg-blue-600 dark:bg-blue-500 z-50"
       )}
     >
       <div className="flex items-center gap-3 px-4">

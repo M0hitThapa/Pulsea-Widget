@@ -4,7 +4,7 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
+#pulsea-widget-container {
   --radius: 0.625rem;
   --shadow-input: 0px 2px 3px -1px rgba(0, 0, 0, 0.1),
     0px 1px 0px 0px rgba(25, 28, 33, 0.02),
@@ -42,7 +42,7 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
-.dark {
+.dark #pulsea-widget-container {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -77,11 +77,13 @@
 }
 
 @layer base {
+
   .widget,
   .widget * {
     border-color: var(--border);
     font-family: "Rubik", sans-serif;
   }
+
   .widget {
     background-color: var(--background);
     color: var(--foreground);
@@ -98,6 +100,6 @@
   font-family: "Armata", sans-serif;
 }
 
-* {
+#pulsea-widget-container * {
   font-family: "Inter", sans-serif;
 }

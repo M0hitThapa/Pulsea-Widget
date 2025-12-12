@@ -3,7 +3,7 @@ import { Widget } from "./components/widget";
 
 function App() {
   return (
-    <div>
+    <div id="pulsea-widget-container">
       <Widget />
     </div>
   );
