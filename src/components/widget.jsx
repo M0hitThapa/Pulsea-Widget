@@ -16,7 +16,6 @@ import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Tabs, TabsContent } from "./ui/tabs";
-import { AnimatePresence, motion } from "framer-motion";
 import {
   MessageSquare,
   X,
@@ -30,20 +29,7 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-// --- Placeholder Functions (for demonstration) ---
-const uploadFile = async (bucket, fileName, file) => {
-  console.log(`Simulating file upload to ${bucket}/${fileName}`);
-  await new Promise((resolve) => setTimeout(resolve, 500));
-  return `https://mockurl.com/${fileName}`;
-};
-
-const supabase = {
-  rpc: async (func, data) => {
-    console.log(`Simulating supabase RPC call: ${func}`, data);
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    return { data: { message: "Feedback submitted" }, error: null };
-  },
-};
+import supabase, { uploadFile } from "../supabase";
 
 // --- Constants ---
 const CLOSED_SIZE = 56;
@@ -228,7 +214,7 @@ export const Widget = ({ projectId }) => {
           {!isMobile && open && (
             <button
               onClick={() => setOpen(false)}
-              className="p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              className="p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800"
             >
               <X className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
             </button>
@@ -237,28 +223,22 @@ export const Widget = ({ projectId }) => {
       </DrawerHeader>
 
       {submitted ? (
-        <motion.div
+        <div
           key="success-message"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.9 }}
           className="flex flex-1 flex-col items-center justify-center text-center px-6 min-h-[300px]"
         >
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: "spring", stiffness: 200 }}
+          <div
             className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
           >
             <CheckCircle2 className="h-8 w-8" />
-          </motion.div>
+          </div>
           <h3 className="mb-2 text-xl font-bold text-neutral-900 dark:text-neutral-100">
             Thanks!
           </h3>
           <p className="text-sm text-neutral-500 dark:text-neutral-400">
             Your {activeTab} helps us grow.
           </p>
-        </motion.div>
+        </div>
       ) : (
         <Tabs
           value={activeTab}
@@ -282,74 +262,44 @@ export const Widget = ({ projectId }) => {
             />
           </div>
 
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.3 }}
-              className="flex-1 min-h-0"
-            >
-              <TabsContent value={activeTab} className="mt-0 space-y-3">
-                <div className="space-y-3">
-                  <FormFields
-                    rating={rating}
-                    hoveredStar={hoveredStar}
-                    setHoveredStar={setHoveredStar}
-                    onSelectStar={onSelectStar}
-                    imagePreview={imagePreview}
-                    removeImage={removeImage}
-                    handleImageChange={handleImageChange}
-                    uploading={uploading}
-                    type={activeTab}
-                    onSubmit={submit}
-                  />
-                </div>
-              </TabsContent>
-            </motion.div>
-          </AnimatePresence>
+          <div className="flex-1 min-h-0">
+            <TabsContent value={activeTab} className="mt-0 space-y-3">
+              <div className="space-y-3">
+                <FormFields
+                  rating={rating}
+                  hoveredStar={hoveredStar}
+                  setHoveredStar={setHoveredStar}
+                  onSelectStar={onSelectStar}
+                  imagePreview={imagePreview}
+                  removeImage={removeImage}
+                  handleImageChange={handleImageChange}
+                  uploading={uploading}
+                  type={activeTab}
+                  onSubmit={submit}
+                />
+              </div>
+            </TabsContent>
+          </div>
         </Tabs>
       )}
     </div>
   );
 
   const TriggerButton = (
-    <motion.div
-      initial={false}
-      animate={{
-        width: isHovered && !isMobile ? HOVER_WIDTH : CLOSED_SIZE,
-        height: CLOSED_SIZE,
-        borderRadius: 50,
-      }}
-      transition={{
-        type: "spring",
-        stiffness: 280,
-        damping: 25,
-      }}
-      onHoverStart={() => !open && !isMobile && setIsHovered(true)}
-      onHoverEnd={() => !open && !isMobile && setIsHovered(false)}
+    <div
+      onClick={() => !open && !isMobile && setIsHovered(true)}
+
       className={cn(
-        "relative flex items-center justify-center overflow-hidden transition-colors bg-blue-600 dark:bg-blue-500 z-50"
+        "relative flex items-center justify-center overflow-hidden bg-blue-600 dark:bg-blue-500 z-50 cursor-pointer",
+        "w-[56px]",
+        "h-[56px] rounded-full"
       )}
     >
       <div className="flex items-center gap-3 px-4">
         <MessageSquareIcon className="size-7 font-semibold text-white" />
-        <AnimatePresence>
-          {isHovered && !isMobile && (
-            <motion.span
-              initial={{ opacity: 0, width: 0, filter: "blur(4px)" }}
-              animate={{ opacity: 1, width: "auto", filter: "blur(0px)" }}
-              exit={{ opacity: 0, width: 0, filter: "blur(4px)" }}
-              transition={{ duration: 0.2 }}
-              className="whitespace-nowrap font-semibold text-white overflow-hidden"
-            >
-              Feedback
-            </motion.span>
-          )}
-        </AnimatePresence>
+
       </div>
-    </motion.div>
+    </div>
   );
 
   if (isMobile) {
@@ -362,21 +312,15 @@ export const Widget = ({ projectId }) => {
         }}
       >
         <Drawer open={open} onOpenChange={setOpen}>
-          <AnimatePresence>
-            {!open && (
-              <motion.div
-                key="mobile-trigger"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                transition={{ duration: 0.2 }}
-                className="shadow-2xl rounded-full pointer-events-auto"
-                style={{ width: CLOSED_SIZE, height: CLOSED_SIZE }}
-              >
-                <DrawerTrigger asChild>{TriggerButton}</DrawerTrigger>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {!open && (
+            <div
+              key="mobile-trigger"
+              className="shadow-2xl rounded-full pointer-events-auto"
+              style={{ width: CLOSED_SIZE, height: CLOSED_SIZE }}
+            >
+              <DrawerTrigger asChild>{TriggerButton}</DrawerTrigger>
+            </div>
+          )}
 
           <DrawerContent
             className="min-h-[74vh] max-h-[90vh] bg-white dark:bg-neutral-950"
@@ -398,19 +342,8 @@ export const Widget = ({ projectId }) => {
       }}
     >
       <Drawer open={open} onOpenChange={setOpen}>
-        <motion.div
+        <div
           ref={widgetRef}
-          layout
-          animate={{
-            width: open ? DESKTOP_WIDTH : isHovered ? HOVER_WIDTH : CLOSED_SIZE,
-            height: open ? DESKTOP_HEIGHT : CLOSED_SIZE,
-            borderRadius: open ? 16 : 50,
-          }}
-          transition={{
-            type: "spring",
-            stiffness: 280,
-            damping: 25,
-          }}
           className={cn(
             "relative shadow-2xl overflow-hidden pointer-events-auto",
             !open && "cursor-pointer",
@@ -418,33 +351,23 @@ export const Widget = ({ projectId }) => {
               ? "bg-white dark:bg-neutral-950"
               : "bg-blue-600 dark:bg-blue-500"
           )}
+          style={{
+            width: open ? DESKTOP_WIDTH : isHovered ? HOVER_WIDTH : CLOSED_SIZE,
+            height: open ? DESKTOP_HEIGHT : CLOSED_SIZE,
+            borderRadius: open ? 16 : 50,
+          }}
           onClick={() => !open && setOpen(true)}
         >
-          <AnimatePresence mode="wait" initial={false}>
-            {open ? (
-              <motion.div
-                key="form-content"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2, delay: 0.1 }}
-                className="h-full"
-              >
-                {formContent}
-              </motion.div>
-            ) : (
-              <motion.div
-                key="button-content"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.1 }}
-              >
-                {TriggerButton}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
+          {open ? (
+            <div key="form-content" className="h-full">
+              {formContent}
+            </div>
+          ) : (
+            <div key="button-content">
+              {TriggerButton}
+            </div>
+          )}
+        </div>
       </Drawer>
     </div>
   );
@@ -456,7 +379,7 @@ function TabTrigger({ value, activeTab, onClick, icon: Icon, label }) {
     <button
       onClick={onClick}
       className={cn(
-        "flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-colors",
+        "flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md",
         isActive
           ? "text-neutral-900 dark:text-neutral-50 bg-white dark:bg-neutral-800 shadow-sm"
           : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
@@ -571,8 +494,7 @@ function FormFields({
           {[...Array(5)].map((_, index) => {
             const isActive = (hoveredStar > 0 ? hoveredStar : rating) > index;
             return (
-              <motion.button
-                whileHover={{ scale: 1.2 }}
+              <button
                 key={index}
                 type="button"
                 aria-label={`Set rating to ${index + 1}`}
@@ -583,13 +505,13 @@ function FormFields({
               >
                 <Star
                   className={cn(
-                    "h-6 w-6 transition-colors",
+                    "h-6 w-6",
                     isActive
                       ? "fill-amber-400 text-amber-400 dark:fill-amber-500 dark:text-amber-500"
                       : "text-neutral-300 dark:text-neutral-700"
                   )}
                 />
-              </motion.button>
+              </button>
             );
           })}
         </div>
@@ -611,7 +533,7 @@ function FormFields({
             <button
               type="button"
               onClick={removeImage}
-              className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+              className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
             >
               <X className="h-4 w-4" />
             </button>
@@ -619,7 +541,7 @@ function FormFields({
         ) : (
           <label
             htmlFor="image"
-            className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg cursor-pointer hover:border-neutral-400 dark:hover:border-neutral-600 transition-colors bg-neutral-50 dark:bg-neutral-900/30"
+            className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg cursor-pointer hover:border-neutral-400 dark:hover:border-neutral-600 bg-neutral-50 dark:bg-neutral-900/30"
           >
             <Upload className="h-8 w-8 text-neutral-400 dark:text-neutral-500 mb-2" />
             <span className="text-sm text-neutral-500 dark:text-neutral-400">
