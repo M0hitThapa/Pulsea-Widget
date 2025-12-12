@@ -192,8 +192,7 @@ export const Widget = ({ projectId }) => {
 
       setSubmitted(true);
       toast.success(
-        `${
-          activeTab === "feedback" ? "Feedback" : "Bug report"
+        `${activeTab === "feedback" ? "Feedback" : "Bug report"
         } submitted successfully!`
       );
       console.log(returnedData);
@@ -499,7 +498,7 @@ function FormFields({
       },
     };
     // Call the parent submit with mock event
-    onSubmit({ ...e, target: mockForm, preventDefault: () => {} });
+    onSubmit({ ...e, target: mockForm, preventDefault: () => { } });
   };
 
   return (
