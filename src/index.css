@@ -1,6 +1,65 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Armata&display=swap");
-@tailwind base;
+
+/* @tailwind base; - Disabled to prevent global side effects */
+#pulsea-widget-container {
+  /* Scoped Preflight/Reset */
+  box-sizing: border-box;
+  border-width: 0;
+  border-style: solid;
+  border-color: #e5e7eb;
+}
+
+#pulsea-widget-container *,
+#pulsea-widget-container ::before,
+#pulsea-widget-container ::after {
+  box-sizing: inherit;
+  border-width: 0;
+  border-style: solid;
+  border-color: inherit;
+}
+
+#pulsea-widget-container img,
+#pulsea-widget-container svg,
+#pulsea-widget-container video,
+#pulsea-widget-container canvas,
+#pulsea-widget-container audio,
+#pulsea-widget-container iframe,
+#pulsea-widget-container embed,
+#pulsea-widget-container object {
+  display: block;
+  vertical-align: middle;
+}
+
+#pulsea-widget-container img,
+#pulsea-widget-container video {
+  max-width: 100%;
+  height: auto;
+}
+
+#pulsea-widget-container button,
+#pulsea-widget-container input,
+#pulsea-widget-container optgroup,
+#pulsea-widget-container select,
+#pulsea-widget-container textarea {
+  font-family: inherit;
+  font-size: 100%;
+  font-weight: inherit;
+  line-height: inherit;
+  color: inherit;
+  margin: 0;
+  padding: 0;
+}
+
+#pulsea-widget-container button,
+#pulsea-widget-container [type='button'],
+#pulsea-widget-container [type='reset'],
+#pulsea-widget-container [type='submit'] {
+  -webkit-appearance: button;
+  background-color: transparent;
+  background-image: none;
+}
+
 @tailwind components;
 @tailwind utilities;
 
