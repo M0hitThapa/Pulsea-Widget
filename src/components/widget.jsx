@@ -33,9 +33,6 @@ import supabase, { uploadFile } from "../supabase";
 
 // --- Constants ---
 const CLOSED_SIZE = 56;
-const HOVER_WIDTH = 150;
-const DESKTOP_WIDTH = 400;
-const DESKTOP_HEIGHT = 630;
 
 // --- Helper Icon ---
 const MessageSquareIcon = (props) => (
@@ -61,26 +58,6 @@ const MessageSquareIcon = (props) => (
   </svg>
 );
 
-// --- useClickOutside Hook ---
-const useClickOutside = (ref, handler) => {
-  useEffect(() => {
-    const listener = (event) => {
-      if (!ref.current || ref.current.contains(event.target)) {
-        return;
-      }
-      handler(event);
-    };
-
-    document.addEventListener("mousedown", listener);
-    document.addEventListener("touchstart", listener);
-
-    return () => {
-      document.removeEventListener("mousedown", listener);
-      document.removeEventListener("touchstart", listener);
-    };
-  }, [ref, handler]);
-};
-
 // --- Main Widget Component ---
 import {
   Popover,
@@ -88,12 +65,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-// ... (keep existing imports)
-
-// --- Main Widget Component ---
 export const Widget = ({ projectId }) => {
   const [open, setOpen] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
   const [rating, setRating] = useState(0);
   const [hoveredStar, setHoveredStar] = useState(0);
   const [submitted, setSubmitted] = useState(false);
@@ -103,7 +76,7 @@ export const Widget = ({ projectId }) => {
   const [uploading, setUploading] = useState(false);
   const [isMobile, setIsMobile] = useState(true);
 
-  const widgetRef = useRef(null);
+  const formRef = useRef(null);
 
   useEffect(() => {
     const checkIsMobile = () => {
@@ -114,16 +87,15 @@ export const Widget = ({ projectId }) => {
     return () => window.removeEventListener("resize", checkIsMobile);
   }, []);
 
+  // Reset form when tab changes
   useEffect(() => {
-    if (open) setIsHovered(false);
-  }, [open]);
-
-  // Close widget when clicking outside on desktop
-  // Popover handles this automatically, but we might need it if we have custom logic?
-  // Popover has onOpenChange, so we can sync state.
-  // We can remove useClickOutside for desktop if Popover handles it.
-  // Keeping it for now won't hurt if ref is correct, but PopoverContent is in a Portal so ref might not work as expected if ref is on trigger.
-  // Actually Popover handles outside click.
+    if (formRef.current) {
+      formRef.current.reset();
+      setRating(0);
+      setImageFile(null);
+      setImagePreview(null);
+    }
+  }, [activeTab]);
 
   const onSelectStar = (index) => setRating(index + 1);
 
@@ -187,7 +159,8 @@ export const Widget = ({ projectId }) => {
 
       setSubmitted(true);
       toast.success(
-        `${activeTab === "feedback" ? "Feedback" : "Bug report"
+        `${
+          activeTab === "feedback" ? "Feedback" : "Bug report"
         } submitted successfully!`
       );
       console.log(returnedData);
@@ -214,10 +187,20 @@ export const Widget = ({ projectId }) => {
 
   const formContent = (
     <div className="flex flex-col h-full space-y-4">
-      <HeaderContainer className={cn("pt-6 pb-2 flex w-full items-center justify-between px-6", !isMobile && "pt-4 px-4")}>
+      <HeaderContainer
+        className={cn(
+          "pt-6 pb-2 flex w-full items-center justify-between px-6",
+          !isMobile && "pt-4 px-4"
+        )}
+      >
         <div className="flex items-center justify-between w-full">
           <div>
-            <HeaderTitle className={cn("text-xl font-bold text-neutral-900 dark:text-neutral-100", !isMobile && "text-lg")}>
+            <HeaderTitle
+              className={cn(
+                "text-xl font-bold text-neutral-900 dark:text-neutral-100",
+                !isMobile && "text-lg"
+              )}
+            >
               Share Your Thoughts
             </HeaderTitle>
             <HeaderDescription className="text-sm text-neutral-500 dark:text-neutral-400">
@@ -227,7 +210,8 @@ export const Widget = ({ projectId }) => {
           {!isMobile && open && (
             <button
               onClick={() => setOpen(false)}
-              className="p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800"
+              aria-label="Close feedback widget"
+              className="p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
             >
               <X className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
             </button>
@@ -240,9 +224,7 @@ export const Widget = ({ projectId }) => {
           key="success-message"
           className="flex flex-1 flex-col items-center justify-center text-center px-6 min-h-[300px]"
         >
-          <div
-            className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
-          >
+          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400">
             <CheckCircle2 className="h-8 w-8" />
           </div>
           <h3 className="mb-2 text-xl font-bold text-neutral-900 dark:text-neutral-100">
@@ -256,9 +238,16 @@ export const Widget = ({ projectId }) => {
         <Tabs
           value={activeTab}
           onValueChange={(v) => setActiveTab(v)}
-          className={cn("flex flex-col flex-1 min-h-0 px-6 pb-6", !isMobile && "px-4 pb-4")}
+          className={cn(
+            "flex flex-col flex-1 min-h-0 px-6 pb-6",
+            !isMobile && "px-4 pb-4"
+          )}
         >
-          <div className="grid w-full grid-cols-2 p-1 mb-4 rounded-lg bg-neutral-100 dark:bg-neutral-900 sticky top-0 z-10">
+          <div
+            className="grid w-full grid-cols-2 p-1 mb-4 rounded-lg bg-neutral-100 dark:bg-neutral-900 sticky top-0 z-10"
+            role="tablist"
+            aria-label="Feedback type"
+          >
             <TabTrigger
               value="feedback"
               activeTab={activeTab}
@@ -277,20 +266,19 @@ export const Widget = ({ projectId }) => {
 
           <div className="flex-1 min-h-0">
             <TabsContent value={activeTab} className="mt-0 space-y-3">
-              <div className="space-y-3">
-                <FormFields
-                  rating={rating}
-                  hoveredStar={hoveredStar}
-                  setHoveredStar={setHoveredStar}
-                  onSelectStar={onSelectStar}
-                  imagePreview={imagePreview}
-                  removeImage={removeImage}
-                  handleImageChange={handleImageChange}
-                  uploading={uploading}
-                  type={activeTab}
-                  onSubmit={submit}
-                />
-              </div>
+              <FormFields
+                rating={rating}
+                hoveredStar={hoveredStar}
+                setHoveredStar={setHoveredStar}
+                onSelectStar={onSelectStar}
+                imagePreview={imagePreview}
+                removeImage={removeImage}
+                handleImageChange={handleImageChange}
+                uploading={uploading}
+                type={activeTab}
+                onSubmit={submit}
+                formRef={formRef}
+              />
             </TabsContent>
           </div>
         </Tabs>
@@ -300,13 +288,15 @@ export const Widget = ({ projectId }) => {
 
   const TriggerButton = (
     <div
-      onClick={() => !open && !isMobile && setIsHovered(true)}
       className={cn(
         "relative flex items-center justify-center overflow-hidden bg-blue-600 dark:bg-blue-500 z-50 cursor-pointer",
         "w-[56px]",
         "h-[56px] rounded-full",
         "shadow-2xl hover:scale-105 transition-transform duration-200"
       )}
+      role="button"
+      aria-label="Open feedback widget"
+      tabIndex={0}
     >
       <div className="flex items-center gap-3 px-4">
         <MessageSquareIcon className="size-7 font-semibold text-white" />
@@ -347,16 +337,14 @@ export const Widget = ({ projectId }) => {
 
   return (
     <div
-      className="fixed right-6 bottom-6 flex flex-col items-end z-50"
+      className="fixed right-6 bottom-6 flex flex-col items-end"
       style={{
         zIndex: 2147483647,
         isolation: "isolate",
       }}
     >
       <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          {TriggerButton}
-        </PopoverTrigger>
+        <PopoverTrigger asChild>{TriggerButton}</PopoverTrigger>
         <PopoverContent
           className="w-[400px] p-0 bg-white dark:bg-neutral-950 border-neutral-200 dark:border-neutral-800 shadow-2xl"
           side="top"
@@ -377,8 +365,11 @@ function TabTrigger({ value, activeTab, onClick, icon: Icon, label }) {
   return (
     <button
       onClick={onClick}
+      role="tab"
+      aria-selected={isActive}
+      aria-controls={`${value}-panel`}
       className={cn(
-        "flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md",
+        "flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-colors",
         isActive
           ? "text-neutral-900 dark:text-neutral-50 bg-white dark:bg-neutral-800 shadow-sm"
           : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
@@ -401,30 +392,16 @@ function FormFields({
   uploading,
   type,
   onSubmit,
+  formRef,
 }) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [feedback, setFeedback] = useState("");
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Create a mock form object
-    const mockForm = {
-      name: { value: name },
-      email: { value: email },
-      feedback: { value: feedback },
-      reset: () => {
-        setName("");
-        setEmail("");
-        setFeedback("");
-      },
-    };
-    // Call the parent submit with mock event
-    onSubmit({ ...e, target: mockForm, preventDefault: () => { } });
-  };
-
   return (
-    <div className="space-y-3">
+    <form
+      ref={formRef}
+      onSubmit={onSubmit}
+      className="space-y-3"
+      id={`${type}-panel`}
+      role="tabpanel"
+    >
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
           <Label
@@ -438,8 +415,6 @@ function FormFields({
             name="name"
             placeholder="John Doe"
             required
-            value={name}
-            onChange={(e) => setName(e.target.value)}
             className="h-9 text-sm bg-neutral-50 dark:bg-neutral-900/50 border-neutral-200 dark:border-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500"
           />
         </div>
@@ -456,8 +431,6 @@ function FormFields({
             type="email"
             placeholder="john@example.com"
             required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
             className="h-9 text-sm bg-neutral-50 dark:bg-neutral-900/50 border-neutral-200 dark:border-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500"
           />
         </div>
@@ -479,8 +452,6 @@ function FormFields({
               : "What went wrong? Please provide details..."
           }
           required
-          value={feedback}
-          onChange={(e) => setFeedback(e.target.value)}
           className="min-h-[80px] h-full resize-none text-sm bg-neutral-50 dark:bg-neutral-900/50 border-neutral-200 dark:border-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500"
         />
       </div>
@@ -489,22 +460,30 @@ function FormFields({
         <Label className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
           {type === "feedback" ? "Rate Your Experience" : "Severity"}
         </Label>
-        <div className="flex justify-center gap-2 py-1">
+        <div
+          className="flex justify-center gap-2 py-1"
+          role="radiogroup"
+          aria-label={type === "feedback" ? "Rating" : "Severity level"}
+        >
           {[...Array(5)].map((_, index) => {
             const isActive = (hoveredStar > 0 ? hoveredStar : rating) > index;
             return (
               <button
                 key={index}
                 type="button"
-                aria-label={`Set rating to ${index + 1} `}
+                role="radio"
+                aria-checked={rating === index + 1}
+                aria-label={`${
+                  type === "feedback" ? "Rate" : "Set severity to"
+                } ${index + 1} ${index + 1 === 1 ? "star" : "stars"}`}
                 onMouseEnter={() => setHoveredStar(index + 1)}
                 onMouseLeave={() => setHoveredStar(0)}
                 onClick={() => onSelectStar(index)}
-                className="p-1 focus:outline-none"
+                className="p-1 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
               >
                 <Star
                   className={cn(
-                    "h-6 w-6",
+                    "h-6 w-6 transition-colors",
                     isActive
                       ? "fill-amber-400 text-amber-400 dark:fill-amber-500 dark:text-amber-500"
                       : "text-neutral-300 dark:text-neutral-700"
@@ -526,13 +505,14 @@ function FormFields({
           <div className="relative w-full h-32 border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg overflow-hidden">
             <img
               src={imagePreview}
-              alt="Preview"
+              alt="Screenshot preview"
               className="w-full h-full object-cover"
             />
             <button
               type="button"
               onClick={removeImage}
-              className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+              aria-label="Remove screenshot"
+              className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
             >
               <X className="h-4 w-4" />
             </button>
@@ -540,7 +520,7 @@ function FormFields({
         ) : (
           <label
             htmlFor="image"
-            className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg cursor-pointer hover:border-neutral-400 dark:hover:border-neutral-600 bg-neutral-50 dark:bg-neutral-900/30"
+            className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg cursor-pointer hover:border-neutral-400 dark:hover:border-neutral-600 bg-neutral-50 dark:bg-neutral-900/30 transition-colors"
           >
             <Upload className="h-8 w-8 text-neutral-400 dark:text-neutral-500 mb-2" />
             <span className="text-sm text-neutral-500 dark:text-neutral-400">
@@ -556,6 +536,7 @@ function FormFields({
               accept="image/*"
               onChange={handleImageChange}
               className="hidden"
+              aria-label="Upload screenshot"
             />
           </label>
         )}
@@ -563,9 +544,8 @@ function FormFields({
 
       <Button
         className="w-full bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600"
-        type="button"
+        type="submit"
         disabled={uploading}
-        onClick={handleSubmit}
       >
         {uploading ? (
           <>
@@ -579,6 +559,6 @@ function FormFields({
           </>
         )}
       </Button>
-    </div>
+    </form>
   );
 }
