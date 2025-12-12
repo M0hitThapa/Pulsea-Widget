@@ -82,6 +82,15 @@ const useClickOutside = (ref, handler) => {
 };
 
 // --- Main Widget Component ---
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+
+// ... (keep existing imports)
+
+// --- Main Widget Component ---
 export const Widget = ({ projectId }) => {
   const [open, setOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -110,11 +119,11 @@ export const Widget = ({ projectId }) => {
   }, [open]);
 
   // Close widget when clicking outside on desktop
-  useClickOutside(widgetRef, () => {
-    if (open && !isMobile) {
-      setOpen(false);
-    }
-  });
+  // Popover handles this automatically, but we might need it if we have custom logic?
+  // Popover has onOpenChange, so we can sync state.
+  // We can remove useClickOutside for desktop if Popover handles it.
+  // Keeping it for now won't hurt if ref is correct, but PopoverContent is in a Portal so ref might not work as expected if ref is on trigger.
+  // Actually Popover handles outside click.
 
   const onSelectStar = (index) => setRating(index + 1);
 
@@ -199,28 +208,32 @@ export const Widget = ({ projectId }) => {
     }
   };
 
+  const HeaderTitle = isMobile ? DrawerTitle : "h3";
+  const HeaderDescription = isMobile ? DrawerDescription : "p";
+  const HeaderContainer = isMobile ? DrawerHeader : "div";
+
   const formContent = (
     <div className="flex flex-col h-full space-y-4">
-      <DrawerHeader className="pt-6 pb-2 flex w-full items-center justify-between px-6">
+      <HeaderContainer className={cn("pt-6 pb-2 flex w-full items-center justify-between px-6", !isMobile && "pt-4 px-4")}>
         <div className="flex items-center justify-between w-full">
           <div>
-            <DrawerTitle className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
+            <HeaderTitle className={cn("text-xl font-bold text-neutral-900 dark:text-neutral-100", !isMobile && "text-lg")}>
               Share Your Thoughts
-            </DrawerTitle>
-            <DrawerDescription className="text-sm text-neutral-500 dark:text-neutral-400">
+            </HeaderTitle>
+            <HeaderDescription className="text-sm text-neutral-500 dark:text-neutral-400">
               We&apos;d love to hear from you.
-            </DrawerDescription>
+            </HeaderDescription>
           </div>
           {!isMobile && open && (
             <button
               onClick={() => setOpen(false)}
               className="p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800"
             >
-              <X className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
+              <X className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
             </button>
           )}
         </div>
-      </DrawerHeader>
+      </HeaderContainer>
 
       {submitted ? (
         <div
@@ -243,7 +256,7 @@ export const Widget = ({ projectId }) => {
         <Tabs
           value={activeTab}
           onValueChange={(v) => setActiveTab(v)}
-          className="flex flex-col flex-1 min-h-0 px-6 pb-6"
+          className={cn("flex flex-col flex-1 min-h-0 px-6 pb-6", !isMobile && "px-4 pb-4")}
         >
           <div className="grid w-full grid-cols-2 p-1 mb-4 rounded-lg bg-neutral-100 dark:bg-neutral-900 sticky top-0 z-10">
             <TabTrigger
@@ -288,16 +301,15 @@ export const Widget = ({ projectId }) => {
   const TriggerButton = (
     <div
       onClick={() => !open && !isMobile && setIsHovered(true)}
-
       className={cn(
         "relative flex items-center justify-center overflow-hidden bg-blue-600 dark:bg-blue-500 z-50 cursor-pointer",
         "w-[56px]",
-        "h-[56px] rounded-full"
+        "h-[56px] rounded-full",
+        "shadow-2xl hover:scale-105 transition-transform duration-200"
       )}
     >
       <div className="flex items-center gap-3 px-4">
         <MessageSquareIcon className="size-7 font-semibold text-white" />
-
       </div>
     </div>
   );
@@ -335,40 +347,27 @@ export const Widget = ({ projectId }) => {
 
   return (
     <div
-      className="fixed right-6 bottom-6 flex flex-col items-end pointer-events-none z-50"
+      className="fixed right-6 bottom-6 flex flex-col items-end z-50"
       style={{
         zIndex: 2147483647,
         isolation: "isolate",
       }}
     >
-      <Drawer open={open} onOpenChange={setOpen}>
-        <div
-          ref={widgetRef}
-          className={cn(
-            "relative shadow-2xl overflow-hidden pointer-events-auto",
-            !open && "cursor-pointer",
-            open
-              ? "bg-white dark:bg-neutral-950"
-              : "bg-blue-600 dark:bg-blue-500"
-          )}
-          style={{
-            width: open ? DESKTOP_WIDTH : isHovered ? HOVER_WIDTH : CLOSED_SIZE,
-            height: open ? DESKTOP_HEIGHT : CLOSED_SIZE,
-            borderRadius: open ? 16 : 50,
-          }}
-          onClick={() => !open && setOpen(true)}
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          {TriggerButton}
+        </PopoverTrigger>
+        <PopoverContent
+          className="w-[400px] p-0 bg-white dark:bg-neutral-950 border-neutral-200 dark:border-neutral-800 shadow-2xl"
+          side="top"
+          align="end"
+          sideOffset={16}
         >
-          {open ? (
-            <div key="form-content" className="h-full">
-              {formContent}
-            </div>
-          ) : (
-            <div key="button-content">
-              {TriggerButton}
-            </div>
-          )}
-        </div>
-      </Drawer>
+          <div className="h-full max-h-[630px] overflow-y-auto">
+            {formContent}
+          </div>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 };
@@ -497,7 +496,7 @@ function FormFields({
               <button
                 key={index}
                 type="button"
-                aria-label={`Set rating to ${index + 1}`}
+                aria-label={`Set rating to ${index + 1} `}
                 onMouseEnter={() => setHoveredStar(index + 1)}
                 onMouseLeave={() => setHoveredStar(0)}
                 onClick={() => onSelectStar(index)}
