@@ -95,3 +95,5 @@ if (typeof window !== "undefined" && !customElements.get("my-widget")) {
   el.setAttribute("project-id", projectId);
   document.body.appendChild(el);
 })();
+
+export default WidgetWebComponent;
