@@ -1,4 +1,4 @@
-import { createRoot } from "react-dom/client";
+import ReactDom from "react-dom/client";
 import Widget from "./components/widget";
 
 export const normalizeAttribute = (attribute) => {
@@ -8,19 +8,13 @@ export const normalizeAttribute = (attribute) => {
 class WidgetWebComponent extends HTMLElement {
   constructor() {
     super();
-    this.root = null;
+    this.attachShadow({ mode: "open" });
   }
 
   connectedCallback() {
     const props = this.getPropsFromAttributes();
-    this.root = createRoot(this);
-    this.root.render(<Widget {...props} />);
-  }
-
-  disconnectedCallback() {
-    if (this.root) {
-      this.root.unmount();
-    }
+    const root = ReactDom.createRoot(this.shadowRoot);
+    root.render(<Widget {...props} />);
   }
 
   getPropsFromAttributes() {
@@ -30,11 +24,6 @@ class WidgetWebComponent extends HTMLElement {
     }
     return props;
   }
-}
-
-// Auto-register when script loads
-if (typeof window !== "undefined" && !customElements.get("my-widget")) {
-  customElements.define("my-widget", WidgetWebComponent);
 }
 
 export default WidgetWebComponent;
