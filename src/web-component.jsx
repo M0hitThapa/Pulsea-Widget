@@ -1,5 +1,6 @@
 import ReactDom from "react-dom/client";
 import Widget from "./components/widget";
+import "./index.css";
 
 export const normalizeAttribute = (attribute) => {
   return attribute.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
@@ -8,12 +9,11 @@ export const normalizeAttribute = (attribute) => {
 class WidgetWebComponent extends HTMLElement {
   constructor() {
     super();
-    this.attachShadow({ mode: "open" });
   }
 
   connectedCallback() {
     const props = this.getPropsFromAttributes();
-    const root = ReactDom.createRoot(this.shadowRoot);
+    const root = ReactDom.createRoot(this);
     root.render(<Widget {...props} />);
   }
 
