@@ -2,41 +2,12 @@
 
 import { useState, useEffect, useRef } from "react";
 import * as React from "react";
-import {
-  Drawer,
-  DrawerTrigger,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerDescription,
-} from "@/components/ui/drawer";
-
-import { Button } from "./ui/button";
-import { Label } from "./ui/label";
-import { Input } from "./ui/input";
-import { Textarea } from "./ui/textarea";
-import { Tabs, TabsContent } from "./ui/tabs";
-import {
-  MessageSquare,
-  X,
-  Star,
-  CheckCircle2,
-  Send,
-  Loader2,
-  Bug,
-  Upload,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { toast } from "sonner";
 
 import supabase, { uploadFile } from "../supabase";
-import tailwindStyles from "../index.css?inline";
-
-// --- Constants ---
-const CLOSED_SIZE = 56;
 
 // --- Helper Icon ---
-const MessageSquareIcon = (props) => (
+
+const MessageIcon = (props) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width="24"
@@ -47,55 +18,185 @@ const MessageSquareIcon = (props) => (
     strokeWidth="2"
     strokeLinecap="round"
     strokeLinejoin="round"
-    className="icon icon-tabler icons-tabler-outline icon-tabler-message-2-share"
     {...props}
   >
-    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-    <path d="M8 9h8" />
-    <path d="M8 13h6" />
-    <path d="M12 21l-3 -3h-3a3 3 0 0 1 -3 -3v-8a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v6" />
-    <path d="M16 22l5 -5" />
-    <path d="M21 21.5v-4.5h-4.5" />
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
   </svg>
 );
 
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+const Star = ({ filled, onClick, onHover }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    onMouseEnter={onHover}
+    className="p-1 focus:outline-none"
+  >
+    <svg
+      className={`w-6 h-6 transition-colors ${
+        filled ? "fill-amber-400 text-amber-400" : "text-gray-300"
+      }`}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+    </svg>
+  </button>
+);
 
-export const Widget = ({ projectId }) => {
+const CheckCircle = () => (
+  <svg
+    className="w-16 h-16 text-green-600"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+  >
+    <circle cx="12" cy="12" r="10" strokeWidth="2" />
+    <path
+      d="M9 12l2 2 4-4"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const X = ({ onClick }) => (
+  <svg
+    onClick={onClick}
+    className="w-4 h-4 cursor-pointer text-gray-500 hover:text-gray-700"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+  >
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
+
+const Upload = () => (
+  <svg
+    className="h-8 w-8 text-gray-400 mb-2"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+  >
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="17 8 12 3 7 8" />
+    <line x1="12" y1="3" x2="12" y2="15" />
+  </svg>
+);
+
+const MessageSquare = () => (
+  <svg
+    className="h-4 w-4"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+  >
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+  </svg>
+);
+
+const Bug = () => (
+  <svg
+    className="h-4 w-4"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+  >
+    <path d="m8 2 1.88 1.88" />
+    <path d="M14.12 3.88 16 2" />
+    <path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1" />
+    <path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6" />
+    <path d="M12 20v-9" />
+    <path d="M6.53 9C4.6 8.8 3 7.1 3 5" />
+    <path d="M6 13H2" />
+    <path d="M3 21c0-2.1 1.7-3.9 3.8-4" />
+    <path d="M20.97 5c0 2.1-1.6 3.8-3.5 4" />
+    <path d="M22 13h-4" />
+    <path d="M17.2 17c2.1.1 3.8 1.9 3.8 4" />
+  </svg>
+);
+
+const Send = () => (
+  <svg
+    className="w-3 h-3"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+  >
+    <line x1="22" y1="2" x2="11" y2="13" />
+    <polygon points="22 2 15 22 11 13 2 9 22 2" />
+  </svg>
+);
+
+const AlertCircle = () => (
+  <svg
+    className="w-5 h-5"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+  >
+    <circle cx="12" cy="12" r="10" />
+    <line x1="12" y1="8" x2="12" y2="12" />
+    <line x1="12" y1="16" x2="12.01" y2="16" />
+  </svg>
+);
+
+// Toast notification component
+const Toast = ({ message, type = "success", onClose }) => (
+  <div
+    className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg ${
+      type === "success" ? "bg-green-600" : "bg-red-600"
+    } text-white`}
+  >
+    {type === "error" && <AlertCircle />}
+    <span className="text-sm font-medium">{message}</span>
+    <button onClick={onClose} className="ml-2">
+      <X onClick={onClose} />
+    </button>
+  </div>
+);
+
+// ============================================
+// MAIN WIDGET COMPONENT
+// ============================================
+export default function Widget({ projectId = "default-project" }) {
   const [open, setOpen] = useState(false);
   const [rating, setRating] = useState(0);
   const [hoveredStar, setHoveredStar] = useState(0);
   const [submitted, setSubmitted] = useState(false);
-  const [activeTab, setActiveTab] = useState("feedback");
+  const [type, setType] = useState("feedback");
+  const [loading, setLoading] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const [isMobile, setIsMobile] = useState(true);
+  const [toast, setToast] = useState(null);
 
-  useEffect(() => {
-    const checkIsMobile = () => {
-      setIsMobile(window.innerWidth < 640);
-    };
-    checkIsMobile();
-    window.addEventListener("resize", checkIsMobile);
-    return () => window.removeEventListener("resize", checkIsMobile);
-  }, []);
-
-  const onSelectStar = (index) => setRating(index + 1);
+  const showToast = (message, toastType = "success") => {
+    setToast({ message, type: toastType });
+    setTimeout(() => setToast(null), 5000);
+  };
 
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        toast.error("Image size must be less than 5MB");
+        showToast("Image size must be less than 5MB", "error");
         return;
       }
       if (!file.type.startsWith("image/")) {
-        toast.error("Please upload an image file");
+        showToast("Please upload an image file", "error");
         return;
       }
       setImageFile(file);
@@ -112,30 +213,35 @@ export const Widget = ({ projectId }) => {
     setImagePreview(null);
   };
 
-  const submit = async (e) => {
-    e.preventDefault();
-    setUploading(true);
-    setSubmitted(false);
+  const handleSubmit = async () => {
+    if (!name || !email || !message) {
+      showToast("Please fill in all required fields", "error");
+      return;
+    }
+
+    setLoading(true);
 
     try {
-      const form = e.target;
       let imageUrl = null;
 
+      // Upload image if exists
       if (imageFile) {
         const fileName = `${Date.now()}-${imageFile.name}`;
         imageUrl = await uploadFile("feedback-images", fileName, imageFile);
       }
 
+      // Prepare data for backend
       const data = {
         p_project_id: projectId,
-        p_user_name: form.name.value,
-        p_user_email: form.email.value,
-        p_message: form.feedback.value,
+        p_user_name: name,
+        p_user_email: email,
+        p_message: message,
         p_rating: rating,
-        p_type: activeTab,
+        p_type: type,
         p_image_url: imageUrl,
       };
 
+      // Call Supabase RPC function
       const { data: returnedData, error } = await supabase.rpc(
         "add_feedback",
         data
@@ -146,177 +252,59 @@ export const Widget = ({ projectId }) => {
       }
 
       setSubmitted(true);
-      toast.success(
+      showToast(
         `${
-          activeTab === "feedback" ? "Feedback" : "Bug report"
-        } submitted successfully!`
+          type === "feedback" ? "Feedback" : "Bug report"
+        } submitted successfully!`,
+        "success"
       );
-      console.log(returnedData);
+      console.log("Submitted data:", returnedData);
 
+      // Reset form after 2 seconds
       setTimeout(() => {
         setSubmitted(false);
         setRating(0);
+        setHoveredStar(0);
+        setName("");
+        setEmail("");
+        setMessage("");
         setImageFile(null);
         setImagePreview(null);
-        form.reset();
         setOpen(false);
-      }, 3000);
+      }, 2000);
     } catch (error) {
-      console.error("Error submitting:", error);
-      toast.error("Failed to submit. Please try again.");
-    } finally {
-      setUploading(false);
+      console.error("Error submitting feedback:", error);
+      showToast("Failed to submit. Please try again.", "error");
+      setLoading(false);
     }
   };
 
-  const HeaderTitle = isMobile ? DrawerTitle : "h3";
-  const HeaderDescription = isMobile ? DrawerDescription : "p";
-  const HeaderContainer = isMobile ? DrawerHeader : "div";
-
-  const formContent = (
-    <>
-      <style>{tailwindStyles}</style>
-      <div className="flex flex-col h-full space-y-4">
-        <HeaderContainer
-          className={cn(
-            "pt-6 pb-2 flex w-full items-center justify-between px-6",
-            !isMobile && "pt-4 px-4"
-          )}
-        >
-          <div className="flex items-center justify-between w-full">
-            <div>
-              <HeaderTitle
-                className={cn(
-                  "text-xl font-bold text-neutral-900 dark:text-neutral-100",
-                  !isMobile && "text-lg"
-                )}
-              >
-                Share Your Thoughts
-              </HeaderTitle>
-              <HeaderDescription className="text-sm text-neutral-500 dark:text-neutral-400">
-                We&apos;d love to hear from you.
-              </HeaderDescription>
-            </div>
-            {!isMobile && open && (
-              <button
-                onClick={() => setOpen(false)}
-                className="p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800"
-              >
-                <X className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
-              </button>
-            )}
-          </div>
-        </HeaderContainer>
-
-        {submitted ? (
-          <div
-            key="success-message"
-            className="flex flex-1 flex-col items-center justify-center text-center px-6 min-h-[300px]"
-          >
-            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400">
-              <CheckCircle2 className="h-8 w-8" />
-            </div>
-            <h3 className="mb-2 text-xl font-bold text-neutral-900 dark:text-neutral-100">
-              Thanks!
-            </h3>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">
-              Your {activeTab} helps us grow.
-            </p>
-          </div>
-        ) : (
-          <Tabs
-            value={activeTab}
-            onValueChange={(v) => setActiveTab(v)}
-            className={cn(
-              "flex flex-col flex-1 min-h-0 px-6 pb-6",
-              !isMobile && "px-4 pb-4"
-            )}
-          >
-            <div className="grid w-full grid-cols-2 p-1 mb-4 rounded-lg bg-neutral-100 dark:bg-neutral-900 sticky top-0 z-10">
-              <TabTrigger
-                value="feedback"
-                activeTab={activeTab}
-                onClick={() => setActiveTab("feedback")}
-                icon={MessageSquare}
-                label="Feedback"
-              />
-              <TabTrigger
-                value="bug"
-                activeTab={activeTab}
-                onClick={() => setActiveTab("bug")}
-                icon={Bug}
-                label="Bug Report"
-              />
-            </div>
-
-            <div className="flex-1 min-h-0">
-              <TabsContent value={activeTab} className="mt-0 space-y-3">
-                <div className="space-y-3">
-                  <FormFields
-                    rating={rating}
-                    hoveredStar={hoveredStar}
-                    setHoveredStar={setHoveredStar}
-                    onSelectStar={onSelectStar}
-                    imagePreview={imagePreview}
-                    removeImage={removeImage}
-                    handleImageChange={handleImageChange}
-                    uploading={uploading}
-                    type={activeTab}
-                    onSubmit={submit}
-                  />
-                </div>
-              </TabsContent>
-            </div>
-          </Tabs>
-        )}
-      </div>
-    </>
-  );
-
-  const TriggerButton = (
-    <div
-      className={cn(
-        "relative flex items-center justify-center overflow-hidden bg-blue-600 dark:bg-blue-500 z-50 cursor-pointer",
-        "w-[56px]",
-        "h-[56px] rounded-full",
-        "shadow-2xl hover:scale-105 transition-transform duration-200"
-      )}
-    >
-      <div className="flex items-center gap-3 px-4">
-        <MessageSquareIcon className="size-7 font-semibold text-white" />
-      </div>
-    </div>
-  );
-
-  if (isMobile) {
+  if (!open) {
     return (
       <>
-        <style>{tailwindStyles}</style>
+        {toast && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={() => setToast(null)}
+          />
+        )}
         <div
-          className="fixed right-6 bottom-6 flex flex-col items-end pointer-events-none widget"
           style={{
+            position: "fixed",
+            right: "24px",
+            bottom: "24px",
             zIndex: 2147483647,
             isolation: "isolate",
           }}
         >
-          <Drawer open={open} onOpenChange={setOpen}>
-            {!open && (
-              <div
-                key="mobile-trigger"
-                className="shadow-2xl rounded-full pointer-events-auto"
-                style={{ width: CLOSED_SIZE, height: CLOSED_SIZE }}
-              >
-                <DrawerTrigger asChild>{TriggerButton}</DrawerTrigger>
-              </div>
-            )}
-
-            <DrawerContent
-              className="min-h-[74vh] max-h-[90vh] bg-white dark:bg-neutral-950 widget"
-              style={{ zIndex: 2147483647 }}
-            >
-              <div className="h-full">{formContent}</div>
-            </DrawerContent>
-          </Drawer>
+          <button
+            onClick={() => setOpen(true)}
+            className="flex items-center justify-center w-14 h-14 bg-blue-600 hover:bg-blue-700 rounded-full shadow-2xl hover:scale-105 transition-all duration-200"
+            style={{ border: "none", cursor: "pointer" }}
+          >
+            <MessageIcon className="w-7 h-7 text-white" />
+          </button>
         </div>
       </>
     );
@@ -324,238 +312,215 @@ export const Widget = ({ projectId }) => {
 
   return (
     <>
-      <style>{tailwindStyles}</style>
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
       <div
-        className="fixed widget right-6 bottom-6 flex flex-col items-end z-50"
         style={{
+          position: "fixed",
+          right: "24px",
+          bottom: "24px",
           zIndex: 2147483647,
           isolation: "isolate",
         }}
       >
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>{TriggerButton}</PopoverTrigger>
-          <PopoverContent
-            className="w-[400px] widget p-0 bg-white dark:bg-neutral-950 border-neutral-200 dark:border-neutral-800 shadow-2xl"
-            side="top"
-            align="end"
-            sideOffset={16}
-          >
-            <style>{tailwindStyles}</style>
-            <div className="h-full max-h-[630px] overflow-y-auto">
-              {formContent}
+        <div className="w-96 bg-white rounded-lg shadow-2xl overflow-hidden border border-gray-200">
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 pt-4 pb-2">
+            <div>
+              <h3 className="text-lg font-bold text-gray-900">
+                Share Your Thoughts
+              </h3>
+              <p className="text-sm text-gray-500">
+                We'd love to hear from you.
+              </p>
             </div>
-          </PopoverContent>
-        </Popover>
-      </div>
-    </>
-  );
-};
-
-function TabTrigger({ value, activeTab, onClick, icon: Icon, label }) {
-  const isActive = value === activeTab;
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md",
-        isActive
-          ? "text-neutral-900 dark:text-neutral-50 bg-white dark:bg-neutral-800 shadow-sm"
-          : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
-      )}
-    >
-      <Icon className="h-4 w-4" />
-      {label}
-    </button>
-  );
-}
-
-function FormFields({
-  rating,
-  hoveredStar,
-  setHoveredStar,
-  onSelectStar,
-  imagePreview,
-  removeImage,
-  handleImageChange,
-  uploading,
-  type,
-  onSubmit,
-}) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [feedback, setFeedback] = useState("");
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const mockForm = {
-      name: { value: name },
-      email: { value: email },
-      feedback: { value: feedback },
-      reset: () => {
-        setName("");
-        setEmail("");
-        setFeedback("");
-      },
-    };
-    onSubmit({ ...e, target: mockForm, preventDefault: () => {} });
-  };
-
-  return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1">
-          <Label
-            htmlFor="name"
-            className="text-xs font-medium text-neutral-600 dark:text-neutral-400"
-          >
-            Name
-          </Label>
-          <Input
-            id="name"
-            name="name"
-            placeholder="John Doe"
-            required
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="h-9 text-sm bg-neutral-50 dark:bg-neutral-900/50 border-neutral-200 dark:border-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500"
-          />
-        </div>
-        <div className="space-y-1">
-          <Label
-            htmlFor="email"
-            className="text-xs font-medium text-neutral-600 dark:text-neutral-400"
-          >
-            Email
-          </Label>
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            placeholder="john@example.com"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="h-9 text-sm bg-neutral-50 dark:bg-neutral-900/50 border-neutral-200 dark:border-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500"
-          />
-        </div>
-      </div>
-
-      <div className="space-y-1">
-        <Label
-          htmlFor="feedback"
-          className="text-xs font-medium text-neutral-600 dark:text-neutral-400"
-        >
-          {type === "feedback" ? "Your Feedback" : "Describe the Bug"}
-        </Label>
-        <Textarea
-          id="feedback"
-          name="feedback"
-          placeholder={
-            type === "feedback"
-              ? "Tell us what's on your mind..."
-              : "What went wrong? Please provide details..."
-          }
-          required
-          value={feedback}
-          onChange={(e) => setFeedback(e.target.value)}
-          className="min-h-[80px] h-full resize-none text-sm bg-neutral-50 dark:bg-neutral-900/50 border-neutral-200 dark:border-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500"
-        />
-      </div>
-
-      <div className="space-y-1">
-        <Label className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
-          {type === "feedback" ? "Rate Your Experience" : "Severity"}
-        </Label>
-        <div className="flex justify-center gap-2 py-1">
-          {[...Array(5)].map((_, index) => {
-            const isActive = (hoveredStar > 0 ? hoveredStar : rating) > index;
-            return (
-              <button
-                key={index}
-                type="button"
-                aria-label={`Set rating to ${index + 1}`}
-                onMouseEnter={() => setHoveredStar(index + 1)}
-                onMouseLeave={() => setHoveredStar(0)}
-                onClick={() => onSelectStar(index)}
-                className="p-1 focus:outline-none"
-              >
-                <Star
-                  className={cn(
-                    "h-6 w-6",
-                    isActive
-                      ? "fill-amber-400 text-amber-400 dark:fill-amber-500 dark:text-amber-500"
-                      : "text-neutral-300 dark:text-neutral-700"
-                  )}
-                />
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="space-y-1">
-        <Label className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
-          {type === "feedback"
-            ? "Screenshot (Optional)"
-            : "Screenshot (Recommended)"}
-        </Label>
-        {imagePreview ? (
-          <div className="relative w-full h-32 border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg overflow-hidden">
-            <img
-              src={imagePreview}
-              alt="Preview"
-              className="w-full h-full object-cover"
-            />
             <button
-              type="button"
-              onClick={removeImage}
-              className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+              onClick={() => setOpen(false)}
+              className="p-2 rounded-full hover:bg-gray-100 transition-colors"
             >
-              <X className="h-4 w-4" />
+              <X onClick={() => setOpen(false)} />
             </button>
           </div>
-        ) : (
-          <label
-            htmlFor="image"
-            className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg cursor-pointer hover:border-neutral-400 dark:hover:border-neutral-600 bg-neutral-50 dark:bg-neutral-900/30"
-          >
-            <Upload className="h-8 w-8 text-neutral-400 dark:text-neutral-500 mb-2" />
-            <span className="text-sm text-neutral-500 dark:text-neutral-400">
-              Click to upload image
-            </span>
-            <span className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
-              PNG, JPG up to 5MB
-            </span>
-            <input
-              id="image"
-              name="image"
-              type="file"
-              accept="image/*"
-              onChange={handleImageChange}
-              className="hidden"
-            />
-          </label>
-        )}
-      </div>
 
-      <Button
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600"
-        type="button"
-        disabled={uploading}
-        onClick={handleSubmit}
-      >
-        {uploading ? (
-          <>
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            Submitting...
-          </>
-        ) : (
-          <>
-            Submit {type === "feedback" ? "Feedback" : "Bug Report"}
-            <Send className="w-3 h-3 ml-2" />
-          </>
-        )}
-      </Button>
-    </div>
+          {submitted ? (
+            <div className="flex flex-col items-center justify-center text-center p-8 min-h-[400px]">
+              <div className="mb-4 flex items-center justify-center rounded-full bg-green-100 p-4">
+                <CheckCircle />
+              </div>
+              <h3 className="text-xl font-bold mb-2 text-gray-900">Thanks!</h3>
+              <p className="text-sm text-gray-500">
+                Your {type} helps us grow.
+              </p>
+            </div>
+          ) : (
+            <div className="p-4 space-y-3 max-h-[600px] overflow-y-auto">
+              {/* Type Toggle */}
+              <div className="grid grid-cols-2 gap-2 p-1 rounded-lg bg-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setType("feedback")}
+                  className={`flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-colors ${
+                    type === "feedback"
+                      ? "bg-white shadow-sm text-gray-900"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  <MessageSquare />
+                  Feedback
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setType("bug")}
+                  className={`flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-colors ${
+                    type === "bug"
+                      ? "bg-white shadow-sm text-gray-900"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  <Bug />
+                  Bug Report
+                </button>
+              </div>
+
+              {/* Name & Email */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-gray-600 block">
+                    Name
+                  </label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="John Doe"
+                    className="w-full h-9 px-3 text-sm border border-gray-200 rounded-md bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-gray-600 block">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="john@example.com"
+                    className="w-full h-9 px-3 text-sm border border-gray-200 rounded-md bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              {/* Message */}
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-gray-600 block">
+                  {type === "feedback" ? "Your Feedback" : "Describe the Bug"}
+                </label>
+                <textarea
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder={
+                    type === "feedback"
+                      ? "Tell us what's on your mind..."
+                      : "What went wrong? Please provide details..."
+                  }
+                  rows={3}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md bg-gray-50 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* Rating */}
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-gray-600 block">
+                  {type === "feedback" ? "Rate Your Experience" : "Severity"}
+                </label>
+                <div
+                  className="flex justify-center gap-2 py-1"
+                  onMouseLeave={() => setHoveredStar(0)}
+                >
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <Star
+                      key={i}
+                      filled={(hoveredStar > 0 ? hoveredStar : rating) >= i}
+                      onClick={() => setRating(i)}
+                      onHover={() => setHoveredStar(i)}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Image Upload */}
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-gray-600 block">
+                  {type === "feedback"
+                    ? "Screenshot (Optional)"
+                    : "Screenshot (Recommended)"}
+                </label>
+                {imagePreview ? (
+                  <div className="relative w-full h-32 border-2 border-dashed border-gray-300 rounded-lg overflow-hidden">
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={removeImage}
+                      className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                    >
+                      <X onClick={removeImage} />
+                    </button>
+                  </div>
+                ) : (
+                  <label
+                    htmlFor="image"
+                    className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 bg-gray-50 transition-colors"
+                  >
+                    <Upload />
+                    <span className="text-sm text-gray-500">
+                      Click to upload image
+                    </span>
+                    <span className="text-xs text-gray-400 mt-1">
+                      PNG, JPG up to 5MB
+                    </span>
+                    <input
+                      id="image"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="hidden"
+                    />
+                  </label>
+                )}
+              </div>
+
+              {/* Submit */}
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={loading || !name || !email || !message}
+                className="w-full h-10 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm font-medium rounded-md transition-colors flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    Submit {type === "feedback" ? "Feedback" : "Bug Report"}
+                    <Send />
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </>
   );
 }
