@@ -1,5 +1,5 @@
 import { createRoot } from "react-dom/client";
-import { Widget } from "./components/Widget";
+import Widget from "./components/widget";
 
 export const normalizeAttribute = (attribute) => {
   return attribute.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
