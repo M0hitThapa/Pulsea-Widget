@@ -1,12 +1,7 @@
 import "./App.css";
-import Widget from "./components/widget";
 
 function App() {
-  return (
-    <div>
-      <Widget />
-    </div>
-  );
+  return <div>hi</div>;
 }
 
 export default App;

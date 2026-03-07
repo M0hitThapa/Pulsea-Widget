@@ -3,14 +3,18 @@ import WidgetWebComponent from "./web-component";
 customElements.define("my-widget", WidgetWebComponent);
 
 const initWidget = () => {
-  const scripts = document.querySelectorAll('script[data-pulsea-widget]');
+  const scripts = document.querySelectorAll('script[data-pulsea-widget], script[data-project-id]');
   
   scripts.forEach((script) => {
     const projectId = script.getAttribute("data-project-id");
     if (projectId) {
-      const widget = document.createElement("my-widget");
-      widget.setAttribute("project-id", projectId);
-      document.body.appendChild(widget);
+      const existingWidget = document.querySelector("my-widget");
+      if (!existingWidget) {
+        const widget = document.createElement("my-widget");
+        widget.setAttribute("project-id", projectId);
+        widget.style.cssText = "position: fixed; bottom: 20px; right: 20px; z-index: 999999;";
+        document.body.appendChild(widget);
+      }
     }
   });
 };
