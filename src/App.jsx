@@ -1,5 +1,5 @@
 import "./App.css";
-import { Widget } from "./components/widget";
+import Widget from "./components/widget";
 
 function App() {
   return (

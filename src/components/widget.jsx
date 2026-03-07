@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import * as React from "react";
 
 import supabase, { uploadFile } from "../supabase";
@@ -244,7 +244,7 @@ export default function Widget({ projectId = "default-project" }) {
       // Call Supabase RPC function
       const { data: returnedData, error } = await supabase.rpc(
         "add_feedback",
-        data
+        data,
       );
 
       if (error) {
@@ -256,7 +256,7 @@ export default function Widget({ projectId = "default-project" }) {
         `${
           type === "feedback" ? "Feedback" : "Bug report"
         } submitted successfully!`,
-        "success"
+        "success",
       );
       console.log("Submitted data:", returnedData);
 
